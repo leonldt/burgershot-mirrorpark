@@ -7,7 +7,7 @@ import pg from "pg";
  * Läuft lokal ohne Browser-Abhängigkeiten und in CI. Die Testdatenbank wird direkt
  * via SQL angesprochen (Session-Anlage/Cleanup), der App-Code läuft unverändert.
  */
-const BASE = "http://127.0.0.1:3000";
+const BASE = "http://localhost:3000";
 const TEST_URL = process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54329/burgershot_test";
 
 function db() {
@@ -47,7 +47,7 @@ function storageFor(token: string) {
       {
         name: "bs_session",
         value: token,
-        domain: "127.0.0.1",
+        domain: "localhost",
         path: "/",
         expires: Math.floor(Date.now() / 1000) + 3600,
         httpOnly: true,
