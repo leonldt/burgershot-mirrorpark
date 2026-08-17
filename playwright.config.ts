@@ -7,14 +7,15 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   expect: { timeout: 15_000 },
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://127.0.0.1:3000",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
   },
-  // E2E läuft gegen den PRODUKTIONS-Server (schnell, keine Turbopack-Compiles)
+  // E2E läuft gegen den PRODUKTIONS-Standalone-Server (schnell, keine Turbopack-Compiles)
   webServer: {
-    command: "npm run build && npm run start",
-    url: "http://localhost:3000",
+    command:
+      "npm run build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && node .next/standalone/server.js",
+    url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
     env: {

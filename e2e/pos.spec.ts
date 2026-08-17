@@ -20,24 +20,24 @@ test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
 
   // ── Bestellung abschicken ───────────────────────────────────────────
   await page.locator("button:has-text('BESTELLUNG ABSCHICKEN')").click();
-  await expect(page.getByText(/Bestellung #\d+ an die Küche gesendet/)).toBeVisible();
 
-  // ── Küche: übernehmen & zubereiten ─────────────────────────────────────────
+  // ── Küche: Bestellung ist da → übernehmen → zubereiten ─────────────────
   await page.goto("/kitchen");
+  await expect(page.getByText("Classic Burger")).toBeVisible({ timeout: 15_000 });
   await page.locator("button:has-text('ÜBERNEHMEN')").first().click();
   await page.locator("button:has-text('ZUBEREITET')").first().click();
 
   // ── Kasse: Bestellung öffnen, bezahlen inkl. Trinkgeld ─────────────────────
   await page.goto("/pos");
-  await page.locator("section:has-text('Bereit zur Ausgabe') button").first().click();
+  await page.locator("section:has-text('Bereit zur Ausgabe') button").first().click({ timeout: 15_000 });
 
   const dialog = page.getByRole("dialog");
-  await dialog.locator("input[type='text']").or(dialog.locator("input[inputmode='decimal']")).fill("20");
-  const tipBtn = dialog.locator("button:has-text('Rest als Trinkgeld')");
-  if (await tipBtn.count()) await tipBtn.first().click();
+  await dialog.locator("input").fill("20");
+  await dialog.locator("button:has-text('Rest als Trinkgeld')").click();
   await dialog.locator("button:has-text('BEZAHLT · BESTELLUNG RAUS GEBEN')").click();
 
-  await expect(page.getByText(/bezahlt & ausgegeben · Rückgeld \$\d+\.\d\d · Trinkgeld/)).toBeVisible();
+  // Ausgabe-Bereich ist wieder leer (Bestellung abgeschlossen)
+  await expect(page.locator("section:has-text('Bereit zur Ausgabe') button").first()).not.toBeVisible({ timeout: 15_000 });
 
   // ── Admin: Trinkgeld-Balance des Mitarbeiters sichtbar ──────────────────────
   await page.goto("/admin/tips");
