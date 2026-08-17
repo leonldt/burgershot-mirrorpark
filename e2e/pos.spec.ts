@@ -1,9 +1,22 @@
 import { expect, test } from "@playwright/test";
+import pg from "pg";
 
 /**
  * Kompletter Ablauf: Login → Kasse/Bestellung → Küche → Ausgabe an der Kasse →
  * Trinkgeld wird dem Mitarbeiter gutgeschrieben.
  */
+const TEST_URL = process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54329/burgershot_test";
+
+// Sauberer Zustand pro Testlauf: alle OFFENEN Bestellungen entfernen, damit
+// Retries/parallele Runs nicht durch Bestandskarten (READY/PREPARING) verfälscht werden.
+test.beforeAll(async () => {
+  const client = new pg.Client({ connectionString: TEST_URL });
+  await client.connect();
+  await client.query(`DELETE FROM "OrderItem" WHERE "orderId" IN (SELECT id FROM "Order" WHERE status <> 'COMPLETED')`);
+  await client.query(`DELETE FROM "Order" WHERE status <> 'COMPLETED'`);
+  await client.end();
+});
+
 test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
   // ── Login als Admin ─────────────────────────────────────────────
   await page.goto("/login");
