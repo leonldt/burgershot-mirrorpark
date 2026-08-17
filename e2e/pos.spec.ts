@@ -14,23 +14,13 @@ test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
 
   // ── Kasse: Produkt in den Warenkorb ─────────────────────────────
   await page.goto("/pos");
-  await page.locator("button:has-text('Burger')").first().click();
   await page.locator("button:has-text('Classic Burger')").first().click();
   await expect(page.getByText("Aktuelle Bestellung")).toBeVisible();
   await expect(page.locator("button:has-text('BESTELLUNG ABSCHICKEN')")).toBeEnabled();
 
   // ── Bestellung abschicken ───────────────────────────────────────────
   await page.locator("button:has-text('BESTELLUNG ABSCHICKEN')").click();
-
-  // Debug-Inspektion: Wenn die Erfolgsmeldung ausbleibt, Protokoll ausgeben.
-  const ok = page.getByText(/an die Küche gesendet/);
-  try {
-    await ok.waitFor({ state: "visible", timeout: 15_000 });
-  } catch {
-    console.log("POS-STATUS-TEXT:", await page.locator("body").innerText().catch(() => "<n/a>"));
-    await page.screenshot({ path: "test-results/after-submit.png" }).catch(() => undefined);
-    throw new Error("Erfolgsmeldung nach Bestell-Submit nicht erschienen");
-  }
+  await expect(page.getByText(/an die Küche gesendet/)).toBeVisible({ timeout: 15_000 });
 
   // ── Küche: Bestellung ist da → übernehmen → zubereiten ─────────────────
   await page.goto("/kitchen");
@@ -38,9 +28,10 @@ test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
   await page.locator("button:has-text('ÜBERNEHMEN')").first().click();
   await page.locator("button:has-text('ZUBEREITET')").first().click();
 
-  // ── Kasse: Bestellung öffnen, bezahlen inkl. Trinkgeld ─────────────────────
+  // ── Kasse: READY-Karte (Button mit „RAUS GEBEN") öffnet den Bezahl-Dialog ──
   await page.goto("/pos");
-  await page.locator("section:has-text('Bereit zur Ausgabe') button").first().click({ timeout: 15_000 });
+  const readyCard = page.locator("button:has-text('RAUS GEBEN')").first();
+  await readyCard.click({ timeout: 15_000 });
 
   const dialog = page.getByRole("dialog");
   await dialog.locator("input").fill("20");
@@ -48,7 +39,7 @@ test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
   await dialog.locator("button:has-text('BEZAHLT · BESTELLUNG RAUS GEBEN')").click();
 
   // Ausgabe-Bereich ist wieder leer (Bestellung abgeschlossen)
-  await expect(page.locator("section:has-text('Bereit zur Ausgabe') button").first()).not.toBeVisible({ timeout: 15_000 });
+  await expect(page.locator("button:has-text('RAUS GEBEN')").first()).not.toBeVisible({ timeout: 15_000 });
 
   // ── Admin: Trinkgeld-Balance des Mitarbeiters sichtbar ──────────────────────
   await page.goto("/admin/tips");
