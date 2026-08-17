@@ -26,14 +26,21 @@ keine hartcodierten Secrets. Für ein produktives Deployment sind diese Dinge n�
    | `AUTH_SESSION_TTL_HOURS` | z. B. `12` |
    | `APP_TIMEZONE` | z. B. `Europe/Berlin` |
    | `NEXT_PUBLIC_APP_URL` | z. B. `https://DEINE-SITE.netlify.app` |
+   | `ADMIN_PASSWORD` | Nur für den ERSTEN Login: legt den Admin-Zugang an (danach entfernen oder ändern) |
+   | `ADMIN_USERNAME` | optional, Standard `admin` |
 
 3. **Build settings:**
-   - Build command: `npx prisma migrate deploy && npm run build`
+   - Build command: `npx prisma migrate deploy && node scripts/bootstrap-admin.mjs && npm run build`
    - Publish directory: `.next` (Next.js-Preset verwenden)
    - Node-Version: >= 20 (Build-Umgebung bietet z. B. Node 24)
 
-4. Deployen. Der erste Build führt die Migrationen aus und baut die App. Die App liest
-   zur Laufzeit dieselbe `DATABASE_URL`.
+4. Deployen: Der erste Build führt die Migrationen aus, legt den Admin-Zugang an
+   (`ADMIN_PASSWORD`) und baut die App. Die App liest zur Laufzeit dieselbe
+   `DATABASE_URL`.
+
+> TLS: Supabase/Neon verlangen verschlüsselte Verbindungen. Trage bei der Datenbank-URL
+> `?sslmode=require` an (z. B. `postgresql://user:pass@host:5432/db?sslmode=require`)
+> oder setze `DATABASE_SSL=true`. Ohne SSL melden diese Anbieter Verbindungsfehler.
 
 Hinweis: Der Build schlägt bei fehlender `DATABASE_URL` mit einer klaren Prisma-Meldung
 fehl (`datasource.url property is required`) – das ist gewollt und zeigt, dass die

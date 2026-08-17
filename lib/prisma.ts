@@ -12,10 +12,21 @@ function createClient() {
         "Deployment: DATABASE_URL in der Host-Umgebung setzen (siehe DEPLOYMENT.md / README.md)."
     );
   }
+
+  // Gehostete Anbieter (Supabase/Neon u. ä.) verlangen TLS. Aktivierung:
+  // per `?sslmode=require` in der URL oder Env DATABASE_SSL=true.
+  let sslMode = false;
+  try {
+    sslMode = new URL(connectionString).searchParams.get("sslmode") === "require" || process.env.DATABASE_SSL === "true";
+  } catch {
+    sslMode = process.env.DATABASE_SSL === "true";
+  }
+
   const adapter = new PrismaPg({
     connectionString,
     connectionTimeoutMillis: 5000,
     max: 10,
+    ...(sslMode ? { ssl: { rejectUnauthorized: false } } : {}),
   });
   return new PrismaClient({ adapter });
 }
