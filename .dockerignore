@@ -1,0 +1,25 @@
+# Node
+node_modules/
+.next/
+out/
+build/
+coverage/
+
+# Datenbank
+.pgdata/
+*.log
+
+# Tests
+test-results/
+playwright-report/
+
+# Git & Umgebung
+.git/
+.gitignore
+.env
+.env.local
+.env.*.local
+
+# Sonstiges
+.DS_Store
+*.pem

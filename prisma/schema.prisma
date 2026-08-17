@@ -1,0 +1,192 @@
+// Burgershot Mirrorpark POS – Prisma Schema (PostgreSQL)
+// Geldbeträge werden ausschließlich als Ganzzahlen in Cent gespeichert (keine Floats).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+  KITCHEN
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  COMPLETED
+}
+
+model User {
+  id              String          @id @default(cuid())
+  username        String          @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  role            Role            @default(EMPLOYEE)
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  orders          Order[]         @relation("EmployeeOrders")
+  tipTransactions TipTransaction[]
+  tipPayouts      TipPayout[]     @relation("PayoutTarget")
+  payoutsMade     TipPayout[]     @relation("PayoutAuthor")
+  sessions        Session[]
+  auditLogs       AuditLog[]
+
+  @@index([role])
+}
+
+model Session {
+  id        String   @id // sha256(token)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  sortOrder Int       @default(0)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+  menus     Menu[]
+}
+
+model Product {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  priceCents  Int
+  imageUrl    String?
+  sortOrder   Int        @default(0)
+  active      Boolean    @default(true)
+  categoryId  String
+  category    Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  menuItems   MenuItem[]
+  orderItems  OrderItem[]
+
+  @@index([categoryId, active, sortOrder])
+}
+
+model Menu {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  priceCents  Int
+  sortOrder   Int        @default(0)
+  active      Boolean    @default(true)
+  categoryId  String
+  category    Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  items       MenuItem[]
+
+  @@index([categoryId, active, sortOrder])
+}
+
+model MenuItem {
+  id        String  @id @default(cuid())
+  menuId    String
+  menu      Menu    @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity  Int     @default(1)
+
+  @@unique([menuId, productId])
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  number          Int             @unique @default(autoincrement())
+  status          OrderStatus     @default(PENDING)
+  // Client-seitig pro Warenkorb erzeugtes Token: verhindert serverseitig doppelte
+  // Übermittlung derselben Bestellung (z. B. durch Doppelklick / Retry).
+  cartToken       String?
+  employeeId      String?
+  employee        User?           @relation("EmployeeOrders", fields: [employeeId], references: [id], onDelete: SetNull)
+  totalCents      Int
+  givenCents      Int?
+  changeCents     Int?
+  tipCents        Int?
+  items           OrderItem[]
+  tipTransaction  TipTransaction?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  preparingAt     DateTime?
+  readyAt         DateTime?
+  completedAt     DateTime?
+
+  @@unique([employeeId, cartToken])
+  @@index([status])
+  @@index([createdAt])
+  @@index([employeeId])
+}
+
+model OrderItem {
+  id             String   @id @default(cuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String?
+  product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName    String // Momentaufnahme des Namens zum Kaufzeitpunkt
+  menuId         String? // gesetzt, wenn der Artikel über ein Menü verkauft wurde
+  unitPriceCents Int // Momentaufnahme des Preises zum Kaufzeitpunkt
+  quantity       Int
+
+  @@index([orderId])
+}
+
+model TipTransaction {
+  id         String   @id @default(cuid())
+  orderId    String   @unique // Eine Bestellung darf nur EINMAL Trinkgeld verbuchen.
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   User     @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  amountCents Int
+  createdAt  DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([createdAt])
+}
+
+model TipPayout {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    User     @relation("PayoutTarget", fields: [employeeId], references: [id], onDelete: Restrict)
+  amountCents Int
+  paidById    String
+  paidBy      User     @relation("PayoutAuthor", fields: [paidById], references: [id], onDelete: Restrict)
+  createdAt   DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  actor     User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  action    String
+  entity    String?
+  entityId  String?
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+}

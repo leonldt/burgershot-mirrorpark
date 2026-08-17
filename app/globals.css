@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --color-coal-950: #0c0a08;
+  --color-coal-900: #12100d;
+  --color-coal-800: #1a1713;
+  --color-coal-700: #242019;
+  --color-coal-600: #322b23;
+  --color-coal-500: #4a4135;
+
+  --color-ember-300: #ffce8a;
+  --color-ember-400: #ffb454;
+  --color-ember-500: #f59e0b;
+  --color-ember-600: #d97e06;
+  --color-ember-700: #b06407;
+
+  --color-ink: #f6f1e8;
+  --color-ink-dim: #a7a092;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+body {
+  background: var(--color-coal-950);
+  color: var(--color-ink);
+}
+
+/* Große, gut treffbare Touch-Buttons */
+.touch {
+  min-height: 3.5rem;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+/* dezente Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-coal-600) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-coal-600);
+  border-radius: 4px;
+}
