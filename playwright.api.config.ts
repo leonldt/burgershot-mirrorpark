@@ -11,6 +11,7 @@ export default defineConfig({
   testMatch: "api-flow.spec.ts",
   timeout: 90_000,
   retries: process.env.CI ? 1 : 0,
+  expect: { timeout: 15_000 },
   use: {
     baseURL: "http://localhost:3000",
   },
