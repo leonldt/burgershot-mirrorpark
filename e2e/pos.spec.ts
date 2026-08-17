@@ -17,9 +17,20 @@ test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
   await page.locator("button:has-text('Burger')").first().click();
   await page.locator("button:has-text('Classic Burger')").first().click();
   await expect(page.getByText("Aktuelle Bestellung")).toBeVisible();
+  await expect(page.locator("button:has-text('BESTELLUNG ABSCHICKEN')")).toBeEnabled();
 
   // ── Bestellung abschicken ───────────────────────────────────────────
   await page.locator("button:has-text('BESTELLUNG ABSCHICKEN')").click();
+
+  // Debug-Inspektion: Wenn die Erfolgsmeldung ausbleibt, Protokoll ausgeben.
+  const ok = page.getByText(/an die Küche gesendet/);
+  try {
+    await ok.waitFor({ state: "visible", timeout: 15_000 });
+  } catch {
+    console.log("POS-STATUS-TEXT:", await page.locator("body").innerText().catch(() => "<n/a>"));
+    await page.screenshot({ path: "test-results/after-submit.png" }).catch(() => undefined);
+    throw new Error("Erfolgsmeldung nach Bestell-Submit nicht erschienen");
+  }
 
   // ── Küche: Bestellung ist da → übernehmen → zubereiten ─────────────────
   await page.goto("/kitchen");
