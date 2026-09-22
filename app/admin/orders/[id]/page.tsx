@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card, StatusBadge } from "@/components/ui";
+import ActionForm from "@/components/admin/ActionForm";
+import { cancelOrderForm } from "@/actions/orders";
 import { formatMoney } from "@/lib/money";
 import { formatDateTime } from "@/lib/date";
 import { FORMATTED_ORDER_NUMBER } from "@/lib/constants";
@@ -28,7 +30,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     { key: "PENDING", label: "Wartet", at: order.createdAt },
     { key: "PREPARING", label: "In Zubereitung", at: order.preparingAt },
     { key: "READY", label: "Bereit", at: order.readyAt },
-    { key: "COMPLETED", label: "Abgeschlossen", at: order.completedAt },
+    ...(order.status === "CANCELLED"
+      ? [{ key: "CANCELLED", label: "Storniert", at: order.cancelledAt ?? null }]
+      : [{ key: "COMPLETED", label: "Abgeschlossen", at: order.completedAt }]),
   ];
 
   return (
@@ -40,7 +44,18 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             {order.employee ? `${order.employee.firstName} ${order.employee.lastName}` : "–"} · {formatDateTime(order.createdAt)}
           </p>
         </div>
-        <StatusBadge status={order.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={order.status} />
+          {order.status !== "COMPLETED" && order.status !== "CANCELLED" && (
+            <ActionForm
+              action={cancelOrderForm}
+              fields={{ id: order.id }}
+              buttonLabel="Storno"
+              tone="danger"
+              confirmText={`Bestellung ${FORMATTED_ORDER_NUMBER(order.number)} wirklich stornieren?`}
+            />
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

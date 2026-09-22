@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { acceptOrder, markOrderReady } from "@/actions/orders";
+import { acceptOrder, markOrderReady, cancelOrder } from "@/actions/orders";
 import { getKitchenOrders, type KitchenOrderDto } from "@/actions/pos";
 import { formatTime } from "@/lib/date";
 
@@ -55,7 +55,7 @@ export default function KitchenClient({ initialOrders }: { initialOrders: Kitche
       try {
         const data = JSON.parse(ev.data) as { type?: string };
         if (data.type === "order.created") notifyNewOrder();
-        if (["order.created", "order.preparing", "order.ready", "order.completed"].includes(data.type ?? "")) refresh();
+        if (["order.created", "order.preparing", "order.ready", "order.completed", "order.cancelled"].includes(data.type ?? "")) refresh();
       } catch {
         /* ignore */
       }
@@ -68,6 +68,12 @@ export default function KitchenClient({ initialOrders }: { initialOrders: Kitche
       clearInterval(clock);
     };
   }, [refresh, notifyNewOrder]);
+
+  const cancelWithConfirm = async (o: KitchenOrderDto) => {
+    if (!window.confirm(`Bestellung ${o.number} wirklich stornieren?`)) return;
+    await cancelOrder(o.id);
+    refresh();
+  };
 
   const act = async (orderId: string, fn: (id: string) => Promise<{ ok: boolean }>, thenRefresh: boolean) => {
     setBusyId(orderId);
@@ -107,6 +113,7 @@ export default function KitchenClient({ initialOrders }: { initialOrders: Kitche
           busyId={busyId}
           action={async (id) => act(id, (oid) => acceptOrder(oid), true)}
           actionLabel="ÜBERNEHMEN"
+          onCancel={cancelWithConfirm}
         />
         <KitchenColumn
           title="In Zubereitung"
@@ -118,6 +125,7 @@ export default function KitchenClient({ initialOrders }: { initialOrders: Kitche
           action={async (id) => act(id, (oid) => markOrderReady(oid), true)}
           actionLabel="ZUBEREITET"
           actionReady
+          onCancel={cancelWithConfirm}
         />
       </div>
     </div>
@@ -134,6 +142,7 @@ function KitchenColumn({
   action,
   actionLabel,
   actionReady = false,
+  onCancel,
 }: {
   title: string;
   tone: "amber" | "sky";
@@ -144,6 +153,7 @@ function KitchenColumn({
   action: (id: string) => Promise<void>;
   actionLabel: string;
   actionReady?: boolean;
+  onCancel: (o: KitchenOrderDto) => void;
 }) {
   const toneCls = tone === "amber" ? "border-amber-500/30 text-amber-400" : "border-sky-500/30 text-sky-400";
   return (
@@ -193,6 +203,13 @@ function KitchenColumn({
                     }`}
                   >
                     {busyId === o.id ? "…" : actionLabel}
+                  </button>
+                  <button
+                    onClick={() => onCancel(o)}
+                    disabled={busyId === o.id}
+                    className="touch mt-2 w-full cursor-pointer rounded-xl bg-red-500/15 px-3.5 py-2 text-sm font-bold text-red-300 transition hover:bg-red-500/25 disabled:opacity-50"
+                  >
+                    Storno
                   </button>
                 </div>
               );

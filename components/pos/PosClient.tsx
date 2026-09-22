@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { submitOrder, completeOrderWithPayment } from "@/actions/orders";
+import { submitOrder, completeOrderWithPayment, cancelOrder } from "@/actions/orders";
 import { getReadyOrders, type PosCategory, type ReadyOrderDto } from "@/actions/pos";
 import { formatMoney, parseDollarsToCents } from "@/lib/money";
 import { Modal, Note } from "@/components/client";
@@ -95,7 +95,7 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
     es.onmessage = (ev) => {
       try {
         const data = JSON.parse(ev.data) as { type?: string };
-        if (data.type === "order.ready" || data.type === "order.completed") refreshReady();
+        if (data.type === "order.ready" || data.type === "order.completed" || data.type === "order.cancelled") refreshReady();
       } catch {
         /* ignore */
       }
@@ -145,6 +145,17 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
     } finally {
       busyRef.current = false;
       setBusy(false);
+    }
+  };
+
+  const cancelWithConfirm = async (order: ReadyOrderDto) => {
+    if (!window.confirm(`Bestellung ${order.number} wirklich stornieren?`)) return;
+    const res = await cancelOrder(order.id);
+    if (res.ok) {
+      setReadyOrders((prev) => prev.filter((o) => o.id !== order.id));
+      flashNote({ tone: "ok", text: `Bestellung ${order.number} storniert.` });
+    } else {
+      flashNote({ tone: "error", text: res.error });
     }
   };
 
@@ -237,11 +248,8 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
           ) : (
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {readyOrders.map((o) => (
-                <button
-                  key={o.id}
-                  onClick={() => openCheckout(o)}
-                  className="cursor-pointer rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-left transition hover:border-emerald-400 hover:bg-emerald-500/10"
-                >
+                <div key={o.id} className="flex flex-col rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 transition hover:border-emerald-400 hover:bg-emerald-500/10">
+                  <button onClick={() => openCheckout(o)} className="w-full text-left">
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-black text-emerald-300">{o.number}</span>
                     <span className="text-xs text-ink-dim">{formatTime(new Date(o.createdAtIso))}</span>
@@ -249,11 +257,20 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
                   <div className="mt-1 line-clamp-2 text-sm text-ink-dim">
                     {o.items.map((i) => `${i.qty}× ${i.name}`).join(" · ")}
                   </div>
-                  <div className="mt-1.5 flex items-center justify-between">
-                    <span className="text-sm font-bold">{formatMoney(o.totalCents)}</span>
-                    <span className="rounded-lg bg-ember-500 px-2.5 py-1 text-xs font-bold text-coal-950">RAUS GEBEN</span>
+                  <div className="mt-1.5 text-sm font-bold">{formatMoney(o.totalCents)}</div>
+                  </button>
+                  <div className="mt-2 flex gap-2">
+                    <button onClick={() => openCheckout(o)} className="touch flex-1 cursor-pointer rounded-lg bg-ember-500 px-2.5 py-2 text-xs font-black text-coal-950 transition hover:bg-ember-400">
+                      RAUS GEBEN
+                    </button>
+                    <button
+                      onClick={() => cancelWithConfirm(o)}
+                      className="touch cursor-pointer rounded-lg bg-red-500/15 px-3 py-2 text-xs font-bold text-red-300 transition hover:bg-red-500/25"
+                    >
+                      Storno
+                    </button>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}

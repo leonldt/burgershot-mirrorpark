@@ -19,6 +19,7 @@ enum OrderStatus {
   PENDING
   PREPARING
   READY
+  CANCELLED
   COMPLETED
 }
 
@@ -130,6 +131,7 @@ model Order {
   preparingAt     DateTime?
   readyAt         DateTime?
   completedAt     DateTime?
+  cancelledAt     DateTime?
 
   @@unique([employeeId, cartToken])
   @@index([status])

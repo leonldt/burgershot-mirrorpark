@@ -31,6 +31,7 @@ const STATUS_META: Record<string, { label: string; cls: string; dot: string }> =
   PENDING: { label: "Wartet", cls: "bg-amber-500/10 text-amber-400 border-amber-500/30", dot: "bg-amber-400" },
   PREPARING: { label: "In Zubereitung", cls: "bg-sky-500/10 text-sky-400 border-sky-500/30", dot: "bg-sky-400" },
   READY: { label: "Bereit zur Ausgabe", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30", dot: "bg-emerald-400" },
+  CANCELLED: { label: "Storniert", cls: "bg-red-500/10 text-red-400 border-red-500/30", dot: "bg-red-400" },
   COMPLETED: { label: "Abgeschlossen", cls: "bg-coal-700/60 text-ink-dim border-coal-600", dot: "bg-coal-500" },
 };
 

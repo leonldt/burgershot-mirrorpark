@@ -3,13 +3,12 @@ import pg from "pg";
 
 /**
  * Kompletter Ablauf: Login → Kasse/Bestellung → Küche → Ausgabe an der Kasse →
- * Trinkgeld wird gutgeschrieben. Der Test baut seine eigenen Daten auf
- * (keine Abhängigkeit von Demo-/Seed-Daten).
+ * Trinkgeld wird gutgeschrieben. Eigene Daten (keine Demo-Daten), plus ein
+ * separater Test für die Stornierung einer Bestellung.
  */
 const TEST_URL = process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54329/burgershot_test";
 
-// Sauberer Zustand pro Lauf: Betriebsdaten leeren und einen minimalen
-// Katalog + Mitarbeiter anlegen. Der Admin existiert aus dem Seed.
+// Sauberer Zustand pro Lauf: Betriebsdaten leeren, minimaler Katalog + Mitarbeiter.
 test.beforeEach(async () => {
   const client = new pg.Client({ connectionString: TEST_URL });
   await client.connect();
@@ -34,56 +33,75 @@ test.beforeEach(async () => {
   await client.end();
 });
 
-async function readyOrdersCount(): Promise<number> {
+async function countOrders(status: string): Promise<number> {
   const client = new pg.Client({ connectionString: TEST_URL });
   await client.connect();
-  const res = await client.query(`SELECT count(*)::int n FROM "Order" WHERE status = 'READY'`);
+  const res = await client.query(`SELECT count(*)::int n FROM "Order" WHERE status = $1`, [status]);
   await client.end();
   return res.rows[0].n;
 }
 
-test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
-  // ── Login als Admin ─────────────────────────────────────────────
+async function loginAsAdmin(page: import("@playwright/test").Page) {
   await page.goto("/login");
   await page.getByLabel("Benutzername").fill("admin");
   await page.getByLabel("Passwort").fill("admin123");
   await page.getByRole("button", { name: /ANMELDEN/i }).click();
   await expect(page).toHaveURL(/\/admin/);
+}
 
-  // ── Kasse: Produkt in den Warenkorb ─────────────────────────────
+test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
+  await loginAsAdmin(page);
+
   await page.goto("/pos");
   await page.locator("button:has-text('Classic Burger')").first().click();
   await expect(page.getByText("Aktuelle Bestellung")).toBeVisible();
   await expect(page.locator("button:has-text('BESTELLUNG ABSCHICKEN')")).toBeEnabled();
 
-  // ── Bestellung abschicken ───────────────────────────────────────────
   await page.locator("button:has-text('BESTELLUNG ABSCHICKEN')").click();
   await expect(page.getByText(/an die Küche gesendet/)).toBeVisible({ timeout: 15_000 });
 
-  // ── Küche: Bestellung ist da → übernehmen → zubereiten ─────────────────
   await page.goto("/kitchen");
   await expect(page.getByText("Classic Burger")).toBeVisible({ timeout: 15_000 });
   await page.locator("button:has-text('ÜBERNEHMEN')").first().click();
   await page.locator("button:has-text('ZUBEREITET')").first().click();
 
-  // Deterministisch warten, bis die Bestellung in der DB wirklich READY ist
-  await expect.poll(async () => readyOrdersCount(), { timeout: 20_000 }).toBeGreaterThan(0);
+  await expect.poll(async () => countOrders("READY"), { timeout: 20_000 }).toBeGreaterThan(0);
 
-  // ── Kasse: READY-Karte (Button mit „RAUS GEBEN") öffnet den Bezahl-Dialog ──
   await page.goto("/pos");
   const readyCard = page.locator("button:has-text('RAUS GEBEN')").first();
   await readyCard.click({ timeout: 15_000 });
 
   const dialog = page.getByRole("dialog");
-  // Betrag 20 über den Touch-Ziffernblock eingeben; „Rest als Trinkgeld" ist automatisch aktiv
   await dialog.getByRole("button", { name: "2", exact: true }).click();
   await dialog.getByRole("button", { name: "0", exact: true }).click();
   await dialog.locator("button:has-text('BEZAHLT · BESTELLUNG RAUS GEBEN')").click();
 
-  // Ausgabe-Bereich ist wieder leer (Bestellung abgeschlossen)
   await expect(page.locator("button:has-text('RAUS GEBEN')").first()).not.toBeVisible({ timeout: 15_000 });
 
-  // ── Admin: Trinkgeld-Balance des Admins sichtbar (er hat die Bestellung kassiert) ──
   await page.goto("/admin/tips");
   await expect(page.getByText("Admin Burgershot").first()).toBeVisible();
+});
+
+test("Stornierung einer Bestellung", async ({ page }) => {
+  await loginAsAdmin(page);
+
+  // Bestellung aufgeben
+  await page.goto("/pos");
+  await page.locator("button:has-text('Classic Burger')").first().click();
+  await page.locator("button:has-text('BESTELLUNG ABSCHICKEN')").click();
+  await expect(page.getByText(/an die Küche gesendet/)).toBeVisible({ timeout: 15_000 });
+
+  // In der Küche stornieren (Bestätigung akzeptieren)
+  await page.goto("/kitchen");
+  await expect(page.getByText("Classic Burger")).toBeVisible({ timeout: 15_000 });
+  page.on("dialog", (d) => d.accept());
+  await page.locator("button:has-text('Storno')").first().click();
+
+  // Bestellung ist weg und in der DB als CANCELLED
+  await expect(page.getByText("Keine Bestellungen").first()).toBeVisible({ timeout: 15_000 });
+  await expect.poll(async () => countOrders("CANCELLED"), { timeout: 15_000 }).toBeGreaterThan(0);
+
+  // Admin: Statusfilter zeigt die stornierte Bestellung
+  await page.goto("/admin/orders?status=CANCELLED");
+  await expect(page.getByText("Storniert").first()).toBeVisible();
 });

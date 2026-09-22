@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card, inputCls, StatusBadge } from "@/components/ui";
+import ActionForm from "@/components/admin/ActionForm";
+import { cancelOrderForm } from "@/actions/orders";
 import { formatMoney } from "@/lib/money";
 import { formatDateTime, dayRange } from "@/lib/date";
 import { FORMATTED_ORDER_NUMBER } from "@/lib/constants";
@@ -64,6 +66,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
               <option value="PENDING">Wartet</option>
               <option value="PREPARING">In Zubereitung</option>
               <option value="READY">Bereit</option>
+              <option value="CANCELLED">Storniert</option>
               <option value="COMPLETED">Abgeschlossen</option>
             </select>
           </label>
@@ -104,6 +107,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                 <th className="px-5 py-2.5">Artikel</th>
                 <th className="px-5 py-2.5 text-right">Summe</th>
                 <th className="px-5 py-2.5 text-right">Trinkgeld</th>
+                <th className="px-5 py-2.5 text-right">Aktion</th>
               </tr>
             </thead>
             <tbody>
@@ -122,6 +126,19 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                   <td className="px-5 py-2.5 text-ink-dim">{o._count.items} Positionen</td>
                   <td className="px-5 py-2.5 text-right font-bold tabular-nums">{formatMoney(o.totalCents)}</td>
                   <td className="px-5 py-2.5 text-right tabular-nums text-ember-400">{o.tipCents ? formatMoney(o.tipCents) : "–"}</td>
+                  <td className="px-5 py-2.5 text-right">
+                    {o.status !== "COMPLETED" && o.status !== "CANCELLED" ? (
+                      <ActionForm
+                        action={cancelOrderForm}
+                        fields={{ id: o.id }}
+                        buttonLabel="Storno"
+                        tone="danger"
+                        confirmText={`Bestellung ${FORMATTED_ORDER_NUMBER(o.number)} wirklich stornieren?`}
+                      />
+                    ) : (
+                      "–"
+                    )}
+                  </td>
                 </tr>
               ))}
               {orders.length === 0 && (

@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 
-export type OrderEventType = "order.created" | "order.preparing" | "order.ready" | "order.completed" | "menu.updated";
+export type OrderEventType = "order.created" | "order.preparing" | "order.ready" | "order.completed" | "order.cancelled" | "menu.updated";
 
 export type OrderEvent = { type: OrderEventType; at: number };
 
