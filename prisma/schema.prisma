@@ -13,6 +13,7 @@ datasource db {
 enum Role {
   ADMIN
   EMPLOYEE
+  SUPPLIER
 }
 
 enum OrderStatus {
@@ -38,6 +39,8 @@ model User {
   tipTransactions TipTransaction[]
   tipPayouts      TipPayout[]     @relation("PayoutTarget")
   payoutsMade     TipPayout[]     @relation("PayoutAuthor")
+  supplierProducts SupplierProduct[] @relation("SupplierProducts")
+  purchaseLists    PurchaseList[]    @relation("PurchaseLists")
   sessions        Session[]
   auditLogs       AuditLog[]
 
@@ -78,6 +81,8 @@ model Product {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   menuItems   MenuItem[]
+  supplierProducts SupplierProduct[]
+  purchaseItems    PurchaseListItem[]
   orderItems  OrderItem[]
 
   @@index([categoryId, active, sortOrder])
@@ -193,4 +198,43 @@ model AuditLog {
 
   @@index([createdAt])
   @@index([actorId])
+}
+
+model SupplierProduct {
+  id                 String  @id @default(cuid())
+  supplierId         String
+  supplier           User    @relation("SupplierProducts", fields: [supplierId], references: [id], onDelete: Restrict)
+  productId          String
+  product            Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sollMenge          Int     @default(0)
+  istMenge           Int     @default(0)
+  einkaufspreisCents Int     @default(0)
+  verkaufspreisCents Int     @default(0)
+
+  @@unique([supplierId, productId])
+}
+
+model PurchaseList {
+  id         String   @id @default(cuid())
+  supplierId String
+  supplier   User     @relation("PurchaseLists", fields: [supplierId], references: [id], onDelete: Restrict)
+  status     String   @default("OFFEN")
+  createdAt  DateTime @default(now())
+  items      PurchaseListItem[]
+
+  @@index([supplierId])
+}
+
+model PurchaseListItem {
+  id                  String        @id @default(cuid())
+  purchaseListId      String
+  purchaseList        PurchaseList  @relation(fields: [purchaseListId], references: [id], onDelete: Cascade)
+  productId           String?
+  product             Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName         String
+  menge               Int
+  einkaufspreisCents  Int
+  verkaufspreisCents  Int
+
+  @@index([purchaseListId])
 }

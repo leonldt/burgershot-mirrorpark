@@ -19,7 +19,7 @@ export default function ActionForm({
   action: (fd: FormData) => Promise<ActionResult>;
   fields: Record<string, string>;
   buttonLabel: ReactNode;
-  tone?: "primary" | "dark" | "danger";
+  tone?: "primary" | "dark" | "danger" | "success";
   confirmText?: string;
   children?: ReactNode;
   className?: string;
@@ -39,6 +39,7 @@ export default function ActionForm({
     primary: "bg-ember-500 text-coal-950 hover:bg-ember-400",
     dark: "bg-coal-800 text-ink hover:bg-coal-700 border border-coal-600",
     danger: "bg-red-600/90 text-white hover:bg-red-500",
+    success: "bg-emerald-600 text-white hover:bg-emerald-500",
   }[tone];
 
   return (

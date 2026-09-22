@@ -120,3 +120,41 @@ test("Mitarbeiter: eigenes Trinkgeld eintragen & entfernen", async ({ page }) =>
   await page.getByRole("button", { name: "Entfernen" }).click();
   await expect(page.getByText("Manueller Eintrag")).not.toBeVisible({ timeout: 15_000 });
 });
+
+test("Lieferant: Sortiment, Einkaufsliste und Bestätigung", async ({ page }) => {
+  await loginAsAdmin(page);
+
+  // Lieferant anlegen
+  await page.goto("/admin/suppliers");
+  await page.getByLabel(/Vorname/).fill("Lief");
+  await page.getByLabel(/Nachname/).fill("Test");
+  await page.getByLabel(/Benutzername/).fill("lief");
+  await page.getByLabel(/Passwort/).fill("lief123");
+  await page.getByRole("button", { name: "Lieferant anlegen" }).click();
+  await expect(page.getByText("Lief Test").first()).toBeVisible();
+
+  // Produkt zum Sortiment + Soll/Ist/Preise
+  await page.locator("select[name='productId']").selectOption({ label: "Classic Burger" });
+  await page.getByRole("button", { name: "Hinzufügen" }).click();
+  await page.locator("input[name='sollMenge']").first().fill("10");
+  await page.locator("input[name='istMenge']").first().fill("4");
+  await page.locator("input[name='einkaufspreisCents']").first().fill("2");
+  await page.locator("input[name='verkaufspreisCents']").first().fill("5");
+  await page.getByRole("button", { name: "Speichern" }).first().click();
+  await expect(page.getByText("+6").first()).toBeVisible(); // Differenz Soll − Ist
+
+  // Einkaufsliste an den Lieferanten senden
+  page.on("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Einkaufsliste an Lieferant senden" }).click();
+  await expect(page.getByText(/EK \$12 · VK \$30/)).toBeVisible();
+
+  // Als Lieferant einloggen und Lieferung bestätigen
+  await page.getByRole("button", { name: "Abmelden" }).click();
+  await page.getByLabel(/Benutzername/).fill("lief");
+  await page.getByLabel(/Passwort/).fill("lief123");
+  await page.getByRole("button", { name: /ANMELDEN/i }).click();
+  await expect(page).toHaveURL(/\/supplier/);
+  await expect(page.getByText("Classic Burger")).toBeVisible();
+  await page.getByRole("button", { name: "Lieferung bestätigen" }).click();
+  await expect(page.getByText("Geliefert").first()).toBeVisible();
+});

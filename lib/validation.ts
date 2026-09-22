@@ -46,7 +46,7 @@ export const employeeSchema = z.object({
   username: z.string().trim().regex(/^[a-zA-Z0-9_]{3,30}$/, "Benutzername: 3–30 Zeichen, nur Buchstaben, Zahlen, _"),
   firstName: z.string().trim().min(1, "Vorname erforderlich").max(60),
   lastName: z.string().trim().min(1, "Nachname erforderlich").max(60),
-  role: z.enum(["ADMIN", "EMPLOYEE"]),
+  role: z.enum(["ADMIN", "EMPLOYEE", "SUPPLIER"]),
 });
 
 export const passwordSchema = z.object({ password: z.string().min(6, "Passwort muss mindestens 6 Zeichen haben").max(200) });

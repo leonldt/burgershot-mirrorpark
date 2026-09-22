@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/admin/categories", label: "Kategorien" },
   { href: "/admin/menus", label: "Menüs" },
   { href: "/admin/employees", label: "Mitarbeiter" },
+  { href: "/admin/suppliers", label: "Lieferanten" },
   { href: "/admin/tips", label: "Trinkgeld" },
   { href: "/admin/audit", label: "Audit-Log" },
 ];
