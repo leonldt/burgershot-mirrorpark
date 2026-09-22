@@ -17,6 +17,14 @@ test.beforeEach(async () => {
   await client.end();
 });
 
+async function dbOrders(): Promise<string> {
+  const client = new pg.Client({ connectionString: TEST_URL });
+  await client.connect();
+  const res = await client.query(`SELECT number, status FROM "Order" ORDER BY number DESC LIMIT 5`);
+  await client.end();
+  return JSON.stringify(res.rows);
+}
+
 test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
   // ── Login als Admin ─────────────────────────────────────────────
   await page.goto("/login");
@@ -41,8 +49,12 @@ test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
   await page.locator("button:has-text('ÜBERNEHMEN')").first().click();
   await page.locator("button:has-text('ZUBEREITET')").first().click();
 
+  // Diagnose: Ist die Bestellung in der DB als READY?
+  console.log("DB-NACH-KÜCHE:", await dbOrders());
+
   // ── Kasse: READY-Karte (Button mit „RAUS GEBEN") öffnet den Bezahl-Dialog ──
   await page.goto("/pos");
+  console.log("POS-BODY:", (await page.locator("body").innerText()).slice(0, 600).replace(/\n/g, " | "));
   const readyCard = page.locator("button:has-text('RAUS GEBEN')").first();
   await readyCard.click({ timeout: 15_000 });
 
