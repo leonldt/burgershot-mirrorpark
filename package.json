@@ -20,7 +20,8 @@
     "db:reset": "prisma migrate reset --force",
     "postinstall": "prisma generate",
     "test:e2e:api": "node scripts/prepare-test-db.mjs && playwright test --config=playwright.api.config.ts",
-    "db:clean": "node scripts/reset-data.mjs"
+    "db:clean": "node scripts/reset-data.mjs",
+    "online": "node scripts/online.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
