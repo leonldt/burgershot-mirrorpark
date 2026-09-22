@@ -52,7 +52,7 @@ export function TipEntryForm() {
             disabled={busy}
             className="touch cursor-pointer rounded-lg border border-coal-600 bg-coal-800 px-3 py-2 text-sm font-bold text-ink-dim transition hover:bg-coal-700 disabled:opacity-50"
           >
-            +${v}
+            {'+$' + v}
           </button>
         ))}
       </div>
