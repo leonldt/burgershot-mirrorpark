@@ -103,5 +103,5 @@ test("Stornierung einer Bestellung", async ({ page }) => {
 
   // Admin: Statusfilter zeigt die stornierte Bestellung
   await page.goto("/admin/orders?status=CANCELLED");
-  await expect(page.getByText("Storniert").first()).toBeVisible();
+  await expect(page.locator("td", { hasText: "Storniert" }).first()).toBeVisible();
 });
