@@ -419,8 +419,23 @@ function CheckoutBody({
   // Rest als Trinkgeld nur in ganzen Dollar (Cent-Anteil landet im Rückgeld)
   const wholeRestCents = givenCents !== null && givenCents > order.totalCents ? Math.floor((givenCents - order.totalCents) / 100) * 100 : 0;
 
-  const press = (key: string) => setGiven((cur) => applyKey(cur, key));
-  const exact = () => setGiven((order.totalCents / 100).toFixed(2));
+  /** Setzt „Gegeben“ und wählt automatisch den ganzen Dollar-Rest als Trinkgeld vor. */
+  const updateGiven = (next: string) => {
+    setGiven(next);
+    let nextCents: number | null = null;
+    try {
+      nextCents = parseDollarsToCents(next);
+    } catch {
+      nextCents = null;
+    }
+    if (nextCents !== null && nextCents > order.totalCents) {
+      setTip(Math.floor((nextCents - order.totalCents) / 100) * 100);
+    } else {
+      setTip(0);
+    }
+  };
+  const press = (key: string) => updateGiven(applyKey(given, key));
+  const exact = () => updateGiven((order.totalCents / 100).toFixed(2));
 
   return (
     <div className="space-y-4">
