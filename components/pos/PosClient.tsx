@@ -445,7 +445,7 @@ function CheckoutBody({
     }
   };
   const press = (key: string) => updateGiven(applyKey(given, key));
-  const exact = () => updateGiven((order.totalCents / 100).toFixed(2));
+  const exact = () => updateGiven(String(order.totalCents / 100));
 
   return (
     <div className="space-y-4">

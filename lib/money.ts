@@ -3,7 +3,8 @@
  * Keine Floats → keine Floating-Point-Fehler.
  */
 export function formatMoney(cents: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+  // Ganze Dollar: Beträge sind als glatte Dollarwerte geführt, Nachkommastellen werden bewusst nicht angezeigt.
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(cents / 100);
 }
 
 /** Parst Nutzereingaben wie "20", "20.5", "$20,50" zu Cent. */

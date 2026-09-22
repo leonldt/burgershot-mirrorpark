@@ -24,7 +24,7 @@ test.beforeEach(async () => {
   );
   await client.query(
     `INSERT INTO "Product" (id, name, description, "priceCents", "sortOrder", active, "categoryId", "createdAt", "updatedAt")
-     VALUES ('e2e-prod-burger', 'Classic Burger', NULL, 490, 0, true, 'e2e-cat-burger', now(), now())`
+     VALUES ('e2e-prod-burger', 'Classic Burger', NULL, 500, 0, true, 'e2e-cat-burger', now(), now())`
   );
   await client.query(
     `INSERT INTO "User" (id, username, "passwordHash", "firstName", "lastName", role, active, "createdAt", "updatedAt")

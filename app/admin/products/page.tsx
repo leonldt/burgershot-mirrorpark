@@ -36,7 +36,7 @@ export default async function ProductsPage() {
           </label>
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-ink-dim">Preis (USD) *</span>
-            <input name="priceCents" type="number" required min="0" step="0.01" placeholder="5.90" className={inputCls} />
+            <input name="priceCents" type="number" required min="0" step="1" placeholder="z. B. 20" className={inputCls} />
           </label>
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-ink-dim">Kategorie *</span>
@@ -131,7 +131,7 @@ export default async function ProductsPage() {
                               </label>
                               <label className="block">
                                 <span className="mb-1 block text-xs font-medium text-ink-dim">Preis (USD)</span>
-                                <input name="priceCents" type="number" min="0" step="0.01" defaultValue={(p.priceCents / 100).toFixed(2)} required className={inputCls} />
+                                <input name="priceCents" type="number" min="0" step="0.01" defaultValue={String(p.priceCents / 100)} required className={inputCls} />
                               </label>
                               <label className="block sm:col-span-2">
                                 <span className="mb-1 block text-[11px] font-medium text-ink-dim">Beschreibung</span>

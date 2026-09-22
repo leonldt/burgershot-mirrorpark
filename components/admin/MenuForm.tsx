@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createMenu, updateMenu } from "@/actions/admin/menus";
 import { inputCls } from "@/components/ui";
+import { formatMoney } from "@/lib/money";
 import { Note } from "@/components/client";
 
 export type MenuFormProduct = { id: string; name: string; priceCents: number };
@@ -33,7 +34,7 @@ export default function MenuForm({
   const [name, setName] = useState(defaults?.name ?? "");
   const [description, setDescription] = useState(defaults?.description ?? "");
   const [imageUrl, setImageUrl] = useState(defaults?.imageUrl ?? "");
-  const [price, setPrice] = useState(defaults ? (defaults.priceCents / 100).toFixed(2) : "");
+  const [price, setPrice] = useState(defaults ? String(defaults.priceCents / 100) : "");
   const [categoryId, setCategoryId] = useState(defaults?.categoryId ?? categories[0]?.id ?? "");
   const [active, setActive] = useState(defaults?.active ?? true);
   const [items, setItems] = useState<{ productId: string; quantity: number }[]>(
@@ -83,7 +84,7 @@ export default function MenuForm({
         </label>
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-ink-dim">Preis (USD) *</span>
-          <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" min="0" step="0.01" placeholder="8.90" className={inputCls} />
+          <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" min="0" step="1" placeholder="z. B. 19" className={inputCls} />
         </label>
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-ink-dim">Kategorie *</span>
@@ -117,7 +118,7 @@ export default function MenuForm({
               >
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} · {p.priceCents / 100} $
+                    {p.name} · {formatMoney(p.priceCents)}
                   </option>
                 ))}
               </select>
@@ -151,7 +152,7 @@ export default function MenuForm({
             + Produkt hinzufügen
           </button>
           <span className="text-xs text-ink-dim">
-            Summe der Teile: <span className="font-bold text-ink">{total / 100} $</span>
+            Summe der Teile: <span className="font-bold text-ink">{formatMoney(total)}</span>
           </span>
         </div>
       </div>

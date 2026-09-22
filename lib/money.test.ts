@@ -3,10 +3,11 @@ import { formatMoney, parseDollarsToCents } from "./money";
 import { FORMATTED_ORDER_NUMBER } from "./constants";
 
 describe("formatMoney", () => {
-  it("formatiert Cent in USD", () => {
-    expect(formatMoney(0)).toBe("$0.00");
-    expect(formatMoney(1990)).toBe("$19.90");
-    expect(formatMoney(12345)).toBe("$123.45");
+  it("zeigt Beträge in ganzen Dollar ohne Nachkommastellen", () => {
+    expect(formatMoney(0)).toBe("$0");
+    expect(formatMoney(500)).toBe("$5");
+    expect(formatMoney(200000)).toBe("$2,000");
+    expect(formatMoney(15000)).toBe("$150");
   });
 });
 

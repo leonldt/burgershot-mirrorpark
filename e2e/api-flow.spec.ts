@@ -29,7 +29,7 @@ test.beforeEach(async () => {
   );
   await client.query(
     `INSERT INTO "Product" (id, name, description, "priceCents", "sortOrder", active, "categoryId", "createdAt", "updatedAt")
-     VALUES ('e2e-prod-burger', 'Classic Burger', NULL, 490, 0, true, 'e2e-cat-burger', now(), now())`
+     VALUES ('e2e-prod-burger', 'Classic Burger', NULL, 500, 0, true, 'e2e-cat-burger', now(), now())`
   );
   await client.query(
     `INSERT INTO "User" (id, username, "passwordHash", "firstName", "lastName", role, active, "createdAt", "updatedAt")
@@ -147,7 +147,7 @@ test("kompletter Lauf: Auth + alle Bereiche + Rollen + Echtzeit-SSE", async ({ p
   expect(pos.status()).toBe(200);
   const posText = await pos.text();
   expect(posText).toContain("Kassenterminal");
-  expect(posText).toContain("$4.90"); // Classic Burger aus dem Test-Setup
+  expect(posText).toContain("$5"); // Classic Burger aus dem Test-Setup (ganzer Dollar)
 
   // ── Küche als Mitarbeiter; Mitarbeiter darf KEIN Admin-Panel ────────
   await sessionFor("max", "emp-token-2");
