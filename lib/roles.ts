@@ -4,7 +4,6 @@ import { getSessionUser, type SessionUser } from "@/lib/session";
 export const Roles = {
   ADMIN: "ADMIN",
   EMPLOYEE: "EMPLOYEE",
-  KITCHEN: "KITCHEN",
 } as const;
 
 export type Role = (typeof Roles)[keyof typeof Roles];
@@ -26,9 +25,7 @@ export function roleHome(role: Role): string {
   switch (role) {
     case Roles.ADMIN:
       return "/admin";
-    case Roles.KITCHEN:
-      return "/kitchen";
     default:
-      return "/pos";
+      return "/pos"; // Mitarbeiter: Kasse (und Küche)
   }
 }

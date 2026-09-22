@@ -8,7 +8,7 @@ export type SessionUser = {
   username: string;
   firstName: string;
   lastName: string;
-  role: "ADMIN" | "EMPLOYEE" | "KITCHEN";
+  role: "ADMIN" | "EMPLOYEE";
 };
 
 export function hashToken(token: string): string {

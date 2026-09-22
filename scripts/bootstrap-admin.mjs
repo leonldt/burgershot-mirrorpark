@@ -9,7 +9,7 @@
  * Aufruf (nach den Migrationen, vor dem App-Start):
  *   node scripts/bootstrap-admin.mjs
  */
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import pg from "pg";
 import bcrypt from "bcryptjs";
 

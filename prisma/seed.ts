@@ -52,7 +52,7 @@ async function main() {
     { username: "max", firstName: "Max", lastName: "Mustermann", role: Role.EMPLOYEE, plain: "demo123" },
     { username: "john", firstName: "John", lastName: "Doe", role: Role.EMPLOYEE, plain: "demo123" },
     { username: "sarah", firstName: "Sarah", lastName: "Meyer", role: Role.EMPLOYEE, plain: "demo123" },
-    { username: "koch", firstName: "Küchen", lastName: "Team", role: Role.KITCHEN, plain: "kueche123" },
+    { username: "koch", firstName: "Küchen", lastName: "Team", role: Role.EMPLOYEE, plain: "kueche123" },
   ];
   const userIdByName: Record<string, string> = {};
   for (const u of users) {

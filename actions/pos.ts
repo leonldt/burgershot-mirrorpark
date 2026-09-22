@@ -74,7 +74,7 @@ export type KitchenOrderDto = {
 };
 
 export async function getKitchenOrders(): Promise<KitchenOrderDto[]> {
-  await requireRole([Roles.KITCHEN, Roles.ADMIN]);
+  await requireRole([Roles.EMPLOYEE, Roles.ADMIN]);
   const orders = await prisma.order.findMany({
     where: { status: { in: ["PENDING", "PREPARING"] } },
     orderBy: [{ status: "asc" }, { createdAt: "asc" }],

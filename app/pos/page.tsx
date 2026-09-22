@@ -15,6 +15,7 @@ export default async function PosPage() {
         area="Kassenterminal"
         tabs={[
           { href: "/pos", label: "Kasse", active: true },
+          { href: "/kitchen", label: "Küche" },
           { href: "/me", label: "Mein Trinkgeld" },
         ]}
       />

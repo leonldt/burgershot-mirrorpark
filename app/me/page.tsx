@@ -38,6 +38,7 @@ export default async function MyTipsPage() {
         area="Mitarbeiterbereich"
         tabs={[
           { href: "/pos", label: "Kasse" },
+          { href: "/kitchen", label: "Küche" },
           { href: "/me", label: "Mein Trinkgeld", active: true },
         ]}
       />

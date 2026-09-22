@@ -44,7 +44,7 @@ export default async function EmployeesPage() {
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-ink-dim">Rolle *</span>
             <select name="role" defaultValue="EMPLOYEE" className={inputCls}>
-              {(["EMPLOYEE", "KITCHEN", "ADMIN"] as const).map((r) => (
+              {(["EMPLOYEE", "ADMIN"] as const).map((r) => (
                 <option key={r} value={r}>
                   {ROLE_LABEL[r]}
                 </option>
@@ -107,7 +107,7 @@ export default async function EmployeesPage() {
                       <label className="block">
                         <span className="mb-1 block text-[11px] font-medium text-ink-dim">Rolle</span>
                         <select name="role" defaultValue={u.role} className={inputCls}>
-                          {(["EMPLOYEE", "KITCHEN", "ADMIN"] as const).map((r) => (
+                          {(["EMPLOYEE", "ADMIN"] as const).map((r) => (
                             <option key={r} value={r}>
                               {ROLE_LABEL[r]}
                             </option>

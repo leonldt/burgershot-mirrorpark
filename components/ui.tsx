@@ -47,7 +47,6 @@ export function StatusBadge({ status }: { status: string }) {
 export const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Admin",
   EMPLOYEE: "Mitarbeiter",
-  KITCHEN: "Küche",
 };
 
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {

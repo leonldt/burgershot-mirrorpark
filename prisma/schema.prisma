@@ -13,7 +13,6 @@ datasource db {
 enum Role {
   ADMIN
   EMPLOYEE
-  KITCHEN
 }
 
 enum OrderStatus {

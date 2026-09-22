@@ -117,7 +117,7 @@ npm run start
 | Mitarbeiter | `max` | `demo123` |
 | Mitarbeiter | `john` | `demo123` |
 | Mitarbeiter | `sarah` | `demo123` |
-| Küche | `koch` | `kueche123` |
+| Mitarbeiter (Kasse + Küche) | `koch` | `kueche123` |
 
 ---
 

@@ -144,7 +144,7 @@ export async function completeOrderWithPayment(input: {
 
 /** Küche: Bestellung übernehmen (PENDING → PREPARING). */
 export async function acceptOrder(orderId: string): Promise<ActionResult> {
-  const user = await requireRole([Roles.KITCHEN, Roles.ADMIN]);
+  const user = await requireRole([Roles.EMPLOYEE, Roles.ADMIN]);
   const parsed = idSchema.safeParse(orderId);
   if (!parsed.success) return { ok: false, error: "Ungültige Bestell-ID." };
   try {
@@ -166,7 +166,7 @@ export async function acceptOrder(orderId: string): Promise<ActionResult> {
 
 /** Küche: Bestellung fertig (PREPARING → READY). */
 export async function markOrderReady(orderId: string): Promise<ActionResult> {
-  const user = await requireRole([Roles.KITCHEN, Roles.ADMIN]);
+  const user = await requireRole([Roles.EMPLOYEE, Roles.ADMIN]);
   const parsed = idSchema.safeParse(orderId);
   if (!parsed.success) return { ok: false, error: "Ungültige Bestell-ID." };
   try {
