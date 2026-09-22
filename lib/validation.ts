@@ -36,6 +36,12 @@ const idSchema = z.string().min(1).max(64);
 
 export { idSchema };
 
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Aktuelles Passwort fehlt"),
+  password: z.string().min(6, "Neues Passwort muss mindestens 6 Zeichen haben").max(200),
+  confirm: z.string().min(1),
+});
+
 export const employeeSchema = z.object({
   username: z.string().trim().regex(/^[a-zA-Z0-9_]{3,30}$/, "Benutzername: 3–30 Zeichen, nur Buchstaben, Zahlen, _"),
   firstName: z.string().trim().min(1, "Vorname erforderlich").max(60),

@@ -5,6 +5,7 @@ import { formatMoney } from "@/lib/money";
 import { formatDateTime } from "@/lib/date";
 import { FORMATTED_ORDER_NUMBER } from "@/lib/constants";
 import { Card } from "@/components/ui";
+import PasswordChangeForm from "@/components/PasswordChangeForm";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,11 @@ export default async function MyTipsPage() {
               ))}
             </ul>
           )}
+        </Card>
+
+        <Card className="mt-6 p-5">
+          <h2 className="mb-3 text-sm font-extrabold uppercase tracking-widest text-ink">Passwort ändern</h2>
+          <PasswordChangeForm />
         </Card>
       </main>
     </div>

@@ -109,7 +109,8 @@ const ACTIONS: Record<string, string> = {
   MENUS_REORDERED: "Menüs sortiert",
   EMPLOYEE_CREATED: "Mitarbeiter erstellt",
   EMPLOYEE_UPDATED: "Mitarbeiter aktualisiert",
-  PASSWORD_RESET: "Passwort zurückgesetzt",
+  PASSWORD_RESET: "Passwort zurückgesetzt (Admin)",
+  PASSWORD_CHANGED_SELF: "Passwort geändert (durch Nutzer selbst)",
   EMPLOYEE_ACTIVATED: "Mitarbeiter aktiviert",
   EMPLOYEE_DEACTIVATED: "Mitarbeiter deaktiviert",
 };
