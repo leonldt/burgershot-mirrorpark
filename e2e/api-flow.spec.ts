@@ -20,7 +20,8 @@ test.beforeEach(async () => {
   await client.connect();
   await client.query(
     `TRUNCATE TABLE "OrderItem", "Order", "TipTransaction", "TipPayout", "AuditLog",
-       "MenuItem", "Menu", "Product", "Category", "Session" CASCADE`
+       "MenuItem", "Menu", "Product", "Category", "Session",
+       "SupplierProduct", "PurchaseListItem", "PurchaseList" CASCADE`
   );
   await client.query(`DELETE FROM "User" WHERE username <> 'admin'`);
   await client.query(

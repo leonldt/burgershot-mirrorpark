@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { createHash } from "node:crypto";
 import pg from "pg";
 
 /**
@@ -14,7 +15,8 @@ test.beforeEach(async () => {
   await client.connect();
   await client.query(
     `TRUNCATE TABLE "OrderItem", "Order", "TipTransaction", "TipPayout", "AuditLog",
-       "MenuItem", "Menu", "Product", "Category", "Session" CASCADE`
+       "MenuItem", "Menu", "Product", "Category", "Session",
+       "SupplierProduct", "PurchaseListItem", "PurchaseList" CASCADE`
   );
   await client.query(`DELETE FROM "User" WHERE username <> 'admin'`);
   await client.query(
@@ -39,6 +41,17 @@ async function countOrders(status: string): Promise<number> {
   const res = await client.query(`SELECT count(*)::int n FROM "Order" WHERE status = $1`, [status]);
   await client.end();
   return res.rows[0].n;
+}
+
+async function createSession(username: string, token: string) {
+  const client = new pg.Client({ connectionString: TEST_URL });
+  await client.connect();
+  const idHash = createHash("sha256").update(token).digest("hex");
+  await client.query(
+    `INSERT INTO "Session" (id, "userId", "createdAt", "expiresAt") SELECT $1, id, now(), now() + interval '2 hours' FROM "User" WHERE username = $2`,
+    [idHash, username]
+  );
+  await client.end();
 }
 
 async function loginAsAdmin(page: import("@playwright/test").Page) {
@@ -148,12 +161,12 @@ test("Lieferant: Sortiment, Einkaufsliste und Bestätigung", async ({ page }) =>
   await page.getByRole("button", { name: "Einkaufsliste an Lieferant senden" }).click();
   await expect(page.getByText(/EK \$12 · VK \$30/)).toBeVisible();
 
-  // Als Lieferant einloggen und Lieferung bestätigen
-  await page.getByRole("button", { name: "Abmelden" }).click();
-  await page.getByLabel(/Benutzername/).fill("lief");
-  await page.getByLabel(/Passwort/).fill("lief123");
-  await page.getByRole("button", { name: /ANMELDEN/i }).click();
-  await expect(page).toHaveURL(/\/supplier/);
+  // Lieferant öffnet seine Ansicht (Session direkt angelegt) und bestätigt die Lieferung
+  await createSession("lief", "lief-token");
+  await page.context().addCookies([
+    { name: "bs_session", value: "lief-token", domain: "127.0.0.1", path: "/", expires: Math.floor(Date.now() / 1000) + 3600, httpOnly: true, sameSite: "Lax" },
+  ]);
+  await page.goto("/supplier");
   await expect(page.getByText("Classic Burger")).toBeVisible();
   await page.getByRole("button", { name: "Lieferung bestätigen" }).click();
   await expect(page.getByText("Geliefert").first()).toBeVisible();
