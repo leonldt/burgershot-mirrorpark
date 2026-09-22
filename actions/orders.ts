@@ -111,7 +111,7 @@ export async function completeOrderWithPayment(input: {
       if (updated.count !== 1) throw new Error("order-race");
 
       if (tipCents > 0) {
-        await tx.tipTransaction.create({ data: { orderId, employeeId: user.id, amountCents: tipCents } });
+        await tx.tipTransaction.create({ data: { orderId, employeeId: user.id, amountCents: tipCents, note: "Aus Kassenabschluss", createdById: user.id } });
         await tx.auditLog.create({
           data: { actorId: user.id, action: "TIP_BOOKED", entity: "Order", entityId: orderId, details: `${FORMATTED_ORDER_NUMBER(order.number)} · ${user.firstName} ${user.lastName} · +${formatMoney(tipCents)}` },
         });

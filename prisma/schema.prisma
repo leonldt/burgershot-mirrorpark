@@ -154,12 +154,14 @@ model OrderItem {
 }
 
 model TipTransaction {
-  id         String   @id @default(cuid())
-  orderId    String   @unique // Eine Bestellung darf nur EINMAL Trinkgeld verbuchen.
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  orderId     String?  @unique // Eine Bestellung darf nur EINMAL Trinkgeld verbuchen; NULL = manueller Eintrag
+  order       Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   employeeId String
   employee   User     @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   amountCents Int
+  note       String?
+  createdById String?
   createdAt  DateTime @default(now())
 
   @@index([employeeId])

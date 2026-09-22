@@ -5,6 +5,7 @@ import { formatMoney } from "@/lib/money";
 import { formatDateTime } from "@/lib/date";
 import { FORMATTED_ORDER_NUMBER } from "@/lib/constants";
 import { Card } from "@/components/ui";
+import { TipEntryForm, TipRemoveButton } from "@/components/tips";
 import PasswordChangeForm from "@/components/PasswordChangeForm";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export default async function MyTipsPage() {
       where: { employeeId: user.id },
       orderBy: { createdAt: "desc" },
       take: 50,
-      select: { id: true, amountCents: true, createdAt: true, order: { select: { number: true } } },
+      select: { id: true, amountCents: true, createdAt: true, note: true, orderId: true, order: { select: { number: true } } },
     }),
     prisma.tipPayout.findMany({
       where: { employeeId: user.id },
@@ -60,18 +61,28 @@ export default async function MyTipsPage() {
         </div>
 
         <Card className="mt-6 p-5">
+          <h2 className="mb-3 text-sm font-extrabold uppercase tracking-widest text-ink">Trinkgeld eintragen</h2>
+          <p className="mb-3 text-xs text-ink-dim/70">Bar-Trinkgeld selbst erfassen – nur ganze Dollar. Bestellbezogene Einträge können nicht entfernt werden.</p>
+          <TipEntryForm />
+        </Card>
+
+        <Card className="mt-6 p-5">
           <h2 className="mb-3 text-sm font-extrabold uppercase tracking-widest text-ink">Trinkgeld-Historie</h2>
           {tipHistory.length === 0 ? (
             <p className="text-sm text-ink-dim">Noch kein Trinkgeld verbucht.</p>
           ) : (
             <ul className="divide-y divide-coal-700">
               {tipHistory.map((t) => (
-                <li key={t.id} className="flex items-center justify-between py-2.5">
-                  <div>
-                    <div className="text-sm font-bold">{FORMATTED_ORDER_NUMBER(t.order.number)}</div>
+                <li key={t.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-bold">{t.order ? FORMATTED_ORDER_NUMBER(t.order.number) : "Manueller Eintrag"}</div>
+                    {t.note && <div className="text-xs text-ink-dim">{t.note}</div>}
                     <div className="text-xs text-ink-dim">{formatDateTime(t.createdAt)}</div>
                   </div>
-                  <span className="text-base font-black text-emerald-400">+{formatMoney(t.amountCents)}</span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-base font-black text-emerald-400">+{formatMoney(t.amountCents)}</span>
+                    {!t.order && <TipRemoveButton tipId={t.id} label={`Eintrag über ${formatMoney(t.amountCents)}`} />}
+                  </div>
                 </li>
               ))}
             </ul>

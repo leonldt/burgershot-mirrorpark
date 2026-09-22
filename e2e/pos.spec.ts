@@ -105,3 +105,18 @@ test("Stornierung einer Bestellung", async ({ page }) => {
   await page.goto("/admin/orders?status=CANCELLED");
   await expect(page.locator("td", { hasText: "Storniert" }).first()).toBeVisible();
 });
+
+test("Mitarbeiter: eigenes Trinkgeld eintragen & entfernen", async ({ page }) => {
+  await loginAsAdmin(page);
+
+  await page.goto("/me");
+  // Manuelles Trinkgeld über den Schnell-Button +$5 eintragen
+  await page.getByRole("button", { name: "+$5" }).click();
+  await expect(page.getByText("Trinkgeld wurde eingetragen.")).toBeVisible();
+  await expect(page.getByText("Manueller Eintrag")).toBeVisible();
+
+  // Eigenen manuellen Eintrag entfernen
+  page.on("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Entfernen" }).click();
+  await expect(page.getByText("Manueller Eintrag")).not.toBeVisible({ timeout: 15_000 });
+});

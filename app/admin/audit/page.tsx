@@ -111,6 +111,8 @@ const ACTIONS: Record<string, string> = {
   EMPLOYEE_UPDATED: "Mitarbeiter aktualisiert",
   PASSWORD_RESET: "Passwort zurückgesetzt (Admin)",
   PASSWORD_CHANGED_SELF: "Passwort geändert (durch Nutzer selbst)",
+  TIP_ADDED_MANUAL: "Trinkgeld manuell eingetragen",
+  TIP_REMOVED_MANUAL: "Trinkgeld-Eintrag entfernt",
   EMPLOYEE_ACTIVATED: "Mitarbeiter aktiviert",
   EMPLOYEE_DEACTIVATED: "Mitarbeiter deaktiviert",
 };
