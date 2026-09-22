@@ -9,7 +9,7 @@ const TEST_URL = process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgre
 
 // Sauberer Zustand pro Testlauf: alle OFFENEN Bestellungen entfernen, damit
 // Retries/parallele Runs nicht durch Bestandskarten (READY/PREPARING) verfälscht werden.
-test.beforeAll(async () => {
+test.beforeEach(async () => {
   const client = new pg.Client({ connectionString: TEST_URL });
   await client.connect();
   await client.query(`DELETE FROM "OrderItem" WHERE "orderId" IN (SELECT id FROM "Order" WHERE status <> 'COMPLETED')`);

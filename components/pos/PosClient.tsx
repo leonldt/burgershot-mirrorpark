@@ -149,7 +149,7 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
 
   const openCheckout = (order: ReadyOrderDto) => {
     setCheckout(order);
-    setGiven(formatMoney(order.totalCents).replace("$", ""));
+    setGiven(""); // Betrag wird eingetippt – „Exakt“ füllt den Gesamtbetrag automatisch
     setTip(0);
     setPayError(null);
   };
