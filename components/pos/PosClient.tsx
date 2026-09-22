@@ -9,7 +9,7 @@ import { formatTime } from "@/lib/date";
 import Clock from "@/components/Clock";
 import Image from "next/image";
 
-type CartLine = { key: string; kind: "product" | "menu"; id: string; name: string; priceCents: number; qty: number };
+type CartLine = { key: string; kind: "product" | "menu"; id: string; name: string; priceCents: number; qty: number; description: string | null };
 
 const CART_KEY = "bs-pos-cart";
 
@@ -19,16 +19,16 @@ function loadCart(catalog: PosCategory[]): CartLine[] {
     const raw = localStorage.getItem(CART_KEY);
     if (!raw) return [];
     const saved = JSON.parse(raw) as { key: string; kind: "product" | "menu"; id: string; qty: number }[];
-    const meta = new Map<string, { name: string; priceCents: number }>();
+    const meta = new Map<string, { name: string; priceCents: number; description: string | null }>();
     for (const c of catalog) {
-      for (const p of c.products) meta.set(`product:${p.id}`, { name: p.name, priceCents: p.priceCents });
-      for (const m of c.menus) meta.set(`menu:${m.id}`, { name: m.name, priceCents: m.priceCents });
+      for (const p of c.products) meta.set(`product:${p.id}`, { name: p.name, priceCents: p.priceCents, description: p.description });
+      for (const m of c.menus) meta.set(`menu:${m.id}`, { name: m.name, priceCents: m.priceCents, description: m.description });
     }
     return saved
       .map((s) => {
         const m = s.kind === "product" || s.kind === "menu" ? meta.get(`${s.kind}:${s.id}`) : undefined;
         if (!m) return null; // deaktiviert oder gelöscht → Zeile verwerfen
-        return { key: `${s.kind}:${s.id}`, kind: s.kind, id: s.id, name: m.name, priceCents: m.priceCents, qty: Math.max(1, Math.min(99, s.qty)) };
+        return { key: `${s.kind}:${s.id}`, kind: s.kind, id: s.id, name: m.name, priceCents: m.priceCents, description: m.description, qty: Math.max(1, Math.min(99, s.qty)) };
       })
       .filter(Boolean) as CartLine[];
   } catch {
@@ -107,12 +107,12 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
     };
   }, [refreshReady]);
 
-  const addItem = (kind: "product" | "menu", id: string, name: string, priceCents: number) => {
+  const addItem = (kind: "product" | "menu", id: string, name: string, priceCents: number, description: string | null) => {
     setCart((prev) => {
       const key = `${kind}:${id}`;
       const existing = prev.find((l) => l.key === key);
       if (existing) return prev.map((l) => (l.key === key ? { ...l, qty: l.qty + 1 } : l));
-      return [...prev, { key, kind, id, name, priceCents, qty: 1 }];
+      return [...prev, { key, kind, id, name, priceCents, description, qty: 1 }];
     });
     setNote(null);
   };
@@ -215,10 +215,10 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
           {activeCat && (activeCat.menus.length > 0 || activeCat.products.length > 0) ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
               {activeCat.menus.map((m) => (
-                <ItemButton key={`m${m.id}`} name={m.name} priceCents={m.priceCents} sub="Menü" accent imageUrl={m.imageUrl} onClick={() => addItem("menu", m.id, m.name, m.priceCents)} />
+                <ItemButton key={`m${m.id}`} name={m.name} priceCents={m.priceCents} sub="Menü" accent imageUrl={m.imageUrl} description={m.description} onClick={() => addItem("menu", m.id, m.name, m.priceCents, m.description)} />
               ))}
               {activeCat.products.map((p) => (
-                <ItemButton key={`p${p.id}`} name={p.name} priceCents={p.priceCents} imageUrl={p.imageUrl} onClick={() => addItem("product", p.id, p.name, p.priceCents)} />
+                <ItemButton key={`p${p.id}`} name={p.name} priceCents={p.priceCents} imageUrl={p.imageUrl} description={p.description} onClick={() => addItem("product", p.id, p.name, p.priceCents, p.description)} />
               ))}
             </div>
           ) : (
@@ -365,6 +365,7 @@ function ItemButton({
   sub,
   accent = false,
   imageUrl,
+  description,
   onClick,
 }: {
   name: string;
@@ -372,6 +373,7 @@ function ItemButton({
   sub?: string;
   accent?: boolean;
   imageUrl?: string | null;
+  description?: string | null;
   onClick: () => void;
 }) {
   return (
@@ -391,7 +393,8 @@ function ItemButton({
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3.5">
         <div>
           <div className="text-[15px] font-bold leading-snug">{name}</div>
-        {sub && <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-ember-400">{sub}</div>}
+          {description ? <div className="mt-0.5 text-xs text-ink-dim">{description}</div> : null}
+          {sub && <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-ember-400">{sub}</div>}
         </div>
         <div className={`text-base font-black tabular-nums ${accent ? "text-ember-300" : "text-ink"}`}>{formatMoney(priceCents)}</div>
       </div>
