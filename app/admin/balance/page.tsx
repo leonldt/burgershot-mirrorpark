@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui";
 import { getBalanceReport } from "@/lib/stats";
 import { formatMoney } from "@/lib/money";
-import { periodRange } from "@/lib/date";
+import { periodRange, formatDateTime } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,8 @@ const PERIODS = [
 export default async function BalancePage({ searchParams }: { searchParams: Promise<{ period?: string; from?: string; to?: string }> }) {
   const sp = await searchParams;
   const period = PERIODS.some((p) => p.key === sp.period) ? sp.period! : "today";
-  const report = await getBalanceReport(periodRange(period, sp.from, sp.to));
+  const range = periodRange(period, sp.from, sp.to);
+  const report = await getBalanceReport(range);
 
   const cards = [
     { label: "Umsatz", value: formatMoney(report.revenueCents), accent: true },
@@ -31,7 +32,10 @@ export default async function BalancePage({ searchParams }: { searchParams: Prom
     <div className="mx-auto max-w-6xl space-y-5">
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight">Tagesbilanz</h1>
-        <p className="text-sm text-ink-dim">Auswertung für {PERIODS.find((p) => p.key === period)?.label.toLowerCase() ?? period}</p>
+        <p className="text-sm text-ink-dim">
+          Auswertung für {PERIODS.find((p) => p.key === period)?.label.toLowerCase() ?? period} ·{" "}
+          {formatDateTime(range.start)} bis {formatDateTime(range.end)}
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

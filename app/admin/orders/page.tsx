@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card, inputCls, StatusBadge } from "@/components/ui";
 import { formatMoney } from "@/lib/money";
-import { formatDateTime } from "@/lib/date";
+import { formatDateTime, dayRange } from "@/lib/date";
 import { FORMATTED_ORDER_NUMBER } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,9 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   if (sp.status) where.status = sp.status;
   if (sp.employeeId) where.employeeId = sp.employeeId;
   if (sp.from || sp.to) {
-    where.createdAt = { ...(sp.from ? { gte: new Date(`${sp.from}T00:00:00.000Z`) } : {}), ...(sp.to ? { lt: new Date(`${sp.to}T23:59:59.999Z`) } : {}) };
+    const start = sp.from ? dayRange(sp.from).start : undefined;
+    const end = sp.to ? dayRange(sp.to).end : undefined;
+    where.createdAt = { ...(start ? { gte: start } : {}), ...(end ? { lt: end } : {}) };
   }
   const qNum = Number((sp.q ?? "").replace(/\D/g, ""));
   if (qNum > 0) where.number = qNum;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { acceptOrder, markOrderReady } from "@/actions/orders";
 import { getKitchenOrders, type KitchenOrderDto } from "@/actions/pos";
 import { formatTime } from "@/lib/date";
@@ -9,6 +9,8 @@ export default function KitchenClient({ initialOrders }: { initialOrders: Kitche
   const [orders, setOrders] = useState<KitchenOrderDto[]>(initialOrders);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [now, setNow] = useState(0);
+  const [soundOn, setSoundOn] = useState(true);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -18,11 +20,41 @@ export default function KitchenClient({ initialOrders }: { initialOrders: Kitche
     }
   }, []);
 
+  const beep = useCallback((freq = 880, delaySec = 0) => {
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") void ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const t = ctx.currentTime + delaySec;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.2, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+      osc.start(t);
+      osc.stop(t + 0.25);
+    } catch {
+      /* Audio nicht verfügbar (z. B. Autoplay-Block) – ignorieren */
+    }
+  }, []);
+
+  /** Signalton bei neu eingetroffener Bestellung (doppelter Piepton). */
+  const notifyNewOrder = useCallback(() => {
+    if (!soundOn) return;
+    beep(880, 0);
+    beep(660, 0.28);
+  }, [soundOn, beep]);
+
   useEffect(() => {
     const es = new EventSource("/api/events");
     es.onmessage = (ev) => {
       try {
         const data = JSON.parse(ev.data) as { type?: string };
+        if (data.type === "order.created") notifyNewOrder();
         if (["order.created", "order.preparing", "order.ready", "order.completed"].includes(data.type ?? "")) refresh();
       } catch {
         /* ignore */
@@ -35,7 +67,7 @@ export default function KitchenClient({ initialOrders }: { initialOrders: Kitche
       clearInterval(poll);
       clearInterval(clock);
     };
-  }, [refresh]);
+  }, [refresh, notifyNewOrder]);
 
   const act = async (orderId: string, fn: (id: string) => Promise<{ ok: boolean }>, thenRefresh: boolean) => {
     setBusyId(orderId);
@@ -51,28 +83,43 @@ export default function KitchenClient({ initialOrders }: { initialOrders: Kitche
   const preparing = orders.filter((o) => o.status === "PREPARING");
 
   return (
-    <div className="grid flex-1 grid-cols-1 gap-3 overflow-hidden p-3 xl:grid-cols-2">
-      <KitchenColumn
-        title="Wartend"
-        tone="amber"
-        count={pending.length}
-        orders={pending}
-        now={now}
-        busyId={busyId}
-        action={async (id) => act(id, (oid) => acceptOrder(oid), true)}
-        actionLabel="ÜBERNEHMEN"
-      />
-      <KitchenColumn
-        title="In Zubereitung"
-        tone="sky"
-        count={preparing.length}
-        orders={preparing}
-        now={now}
-        busyId={busyId}
-        action={async (id) => act(id, (oid) => markOrderReady(oid), true)}
-        actionLabel="ZUBEREITET"
-        actionReady
-      />
+    <div className="flex flex-1 flex-col overflow-hidden p-3">
+      <div className="mb-2 flex items-center justify-between px-1">
+        <span className="text-xs text-ink-dim">
+          Neue Bestellungen erscheinen hier automatisch – kein Neuladen nötig.
+        </span>
+        <button
+          onClick={() => setSoundOn((s) => !s)}
+          className={`touch cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
+            soundOn ? "border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10" : "border-coal-600 text-ink-dim hover:bg-coal-800"
+          }`}
+        >
+          Ton bei neuer Bestellung: {soundOn ? "An" : "Aus"}
+        </button>
+      </div>
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-2">
+        <KitchenColumn
+          title="Wartend"
+          tone="amber"
+          count={pending.length}
+          orders={pending}
+          now={now}
+          busyId={busyId}
+          action={async (id) => act(id, (oid) => acceptOrder(oid), true)}
+          actionLabel="ÜBERNEHMEN"
+        />
+        <KitchenColumn
+          title="In Zubereitung"
+          tone="sky"
+          count={preparing.length}
+          orders={preparing}
+          now={now}
+          busyId={busyId}
+          action={async (id) => act(id, (oid) => markOrderReady(oid), true)}
+          actionLabel="ZUBEREITET"
+          actionReady
+        />
+      </div>
     </div>
   );
 }

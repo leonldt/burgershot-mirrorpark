@@ -47,7 +47,9 @@ test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
   await readyCard.click({ timeout: 15_000 });
 
   const dialog = page.getByRole("dialog");
-  await dialog.locator("input").fill("20");
+  // Betrag 20 über den Touch-Ziffernblock eingeben
+  await dialog.getByRole("button", { name: "2", exact: true }).click();
+  await dialog.getByRole("button", { name: "0", exact: true }).click();
   await dialog.locator("button:has-text('Rest als Trinkgeld')").click();
   await dialog.locator("button:has-text('BEZAHLT · BESTELLUNG RAUS GEBEN')").click();
 

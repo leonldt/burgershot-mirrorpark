@@ -6,8 +6,34 @@ import { getReadyOrders, type PosCategory, type ReadyOrderDto } from "@/actions/
 import { formatMoney, parseDollarsToCents } from "@/lib/money";
 import { Modal, Note } from "@/components/client";
 import { formatTime } from "@/lib/date";
+import Clock from "@/components/Clock";
 
 type CartLine = { key: string; kind: "product" | "menu"; id: string; name: string; priceCents: number; qty: number };
+
+const CART_KEY = "bs-pos-cart";
+
+/** Stellt den Warenkorb nach einem Reload wieder her – Preise/Namen werden gegen den aktuellen Katalog validiert. */
+function loadCart(catalog: PosCategory[]): CartLine[] {
+  try {
+    const raw = localStorage.getItem(CART_KEY);
+    if (!raw) return [];
+    const saved = JSON.parse(raw) as { key: string; kind: "product" | "menu"; id: string; qty: number }[];
+    const meta = new Map<string, { name: string; priceCents: number }>();
+    for (const c of catalog) {
+      for (const p of c.products) meta.set(`product:${p.id}`, { name: p.name, priceCents: p.priceCents });
+      for (const m of c.menus) meta.set(`menu:${m.id}`, { name: m.name, priceCents: m.priceCents });
+    }
+    return saved
+      .map((s) => {
+        const m = s.kind === "product" || s.kind === "menu" ? meta.get(`${s.kind}:${s.id}`) : undefined;
+        if (!m) return null; // deaktiviert oder gelöscht → Zeile verwerfen
+        return { key: `${s.kind}:${s.id}`, kind: s.kind, id: s.id, name: m.name, priceCents: m.priceCents, qty: Math.max(1, Math.min(99, s.qty)) };
+      })
+      .filter(Boolean) as CartLine[];
+  } catch {
+    return [];
+  }
+}
 
 export default function PosClient({ catalog, readyOrders: initialReady }: { catalog: PosCategory[]; readyOrders: ReadyOrderDto[] }) {
   const [categories] = useState(catalog);
@@ -16,7 +42,7 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
     [catalog]
   );
   const [activeCatId, setActiveCatId] = useState(firstWithContent);
-  const [cart, setCart] = useState<CartLine[]>([]);
+  const [cart, setCart] = useState<CartLine[]>(() => loadCart(catalog));
   const [readyOrders, setReadyOrders] = useState<ReadyOrderDto[]>(initialReady);
   const [checkout, setCheckout] = useState<ReadyOrderDto | null>(null);
   const [given, setGiven] = useState("");
@@ -26,10 +52,34 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
   const [note, setNote] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const cartToken = useRef(crypto.randomUUID());
   const busyRef = useRef(false);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activeCat = categories.find((c) => c.id === activeCatId) ?? categories[0];
 
   const totalCents = cart.reduce((sum, l) => sum + l.priceCents * l.qty, 0);
+
+  /** Warenkorb lokal zwischenspeichern (überlebt versehentliches Neuladen). */
+  useEffect(() => {
+    try {
+      if (cart.length === 0) localStorage.removeItem(CART_KEY);
+      else localStorage.setItem(CART_KEY, JSON.stringify(cart.map(({ key, kind, id, qty }) => ({ key, kind, id, qty }))));
+    } catch {
+      /* localStorage nicht verfügbar – ignorieren */
+    }
+  }, [cart]);
+
+  /** Meldungen erscheinen und verschwinden nach 5 s wieder. */
+  const flashNote = useCallback((n: { tone: "ok" | "error"; text: string }) => {
+    setNote(n);
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+    noteTimer.current = setTimeout(() => setNote(null), 5000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (noteTimer.current) clearTimeout(noteTimer.current);
+    };
+  }, []);
 
   const refreshReady = useCallback(async () => {
     try {
@@ -87,9 +137,9 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
       if (res.ok) {
         cartToken.current = crypto.randomUUID();
         setCart([]);
-        setNote({ tone: "ok", text: `Bestellung ${res.orderNumber} wurde an die Küche gesendet.` });
+        flashNote({ tone: "ok", text: `Bestellung ${res.orderNumber} wurde an die Küche gesendet.` });
       } else {
-        setNote({ tone: "error", text: res.error });
+        flashNote({ tone: "error", text: res.error });
       }
     } finally {
       busyRef.current = false;
@@ -126,7 +176,7 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
         setCheckout(null);
         setGiven("");
         setTip(0);
-        setNote({
+        flashNote({
           tone: "ok",
           text: `Bestellung ${res.orderNumber} bezahlt & ausgegeben · Rückgeld ${formatMoney(res.changeCents)}${res.tipCents ? ` · Trinkgeld ${formatMoney(res.tipCents)} verbucht` : ""}`,
         });
@@ -143,18 +193,21 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
     <div className="grid flex-1 grid-cols-1 gap-3 overflow-hidden p-3 lg:grid-cols-[1fr_400px]">
       {/* ── Links: Kategorien + Produkte ───────────────────────────────────── */}
       <section className="flex min-h-0 flex-col gap-3">
-        <div className="flex flex-wrap gap-2">
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setActiveCatId(c.id)}
-              className={`touch cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold transition ${
-                activeCat?.id === c.id ? "bg-ember-500 text-coal-950 shadow-lg shadow-ember-500/20" : "bg-coal-800 text-ink-dim hover:bg-coal-700 hover:text-ink"
-              }`}
-            >
-              {c.name}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setActiveCatId(c.id)}
+                className={`touch cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                  activeCat?.id === c.id ? "bg-ember-500 text-coal-950 shadow-lg shadow-ember-500/20" : "bg-coal-800 text-ink-dim hover:bg-coal-700 hover:text-ink"
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+          <Clock className="shrink-0" />
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -208,8 +261,9 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
 
       {/* ── Rechts: Warenkorb ──────────────────────────────────────────────── */}
       <aside className="flex min-h-0 flex-col rounded-2xl border border-coal-700/70 bg-coal-900">
-        <div className="border-b border-coal-700 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-coal-700 px-4 py-3">
           <h2 className="text-sm font-extrabold uppercase tracking-widest text-ink">Aktuelle Bestellung</h2>
+          {cart.length > 0 && <span className="text-xs tabular-nums text-ink-dim">{cart.length} Position{cart.length === 1 ? "" : "en"}</span>}
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
@@ -363,6 +417,9 @@ function CheckoutBody({
   const changeCents = givenCents !== null ? givenCents - order.totalCents - tip : null;
   const valid = givenCents !== null && changeCents !== null && changeCents >= 0;
 
+  const press = (key: string) => setGiven(applyKey(given, key));
+  const exact = () => setGiven((order.totalCents / 100).toFixed(2));
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl bg-coal-800 px-4 py-3 text-sm">
@@ -379,17 +436,42 @@ function CheckoutBody({
         </div>
       </div>
 
-      <label className="block">
-        <span className="mb-1 block text-sm font-medium text-ink-dim">Gegeben (USD)</span>
-        <input
-          value={given}
-          onChange={(e) => setGiven(e.target.value)}
-          inputMode="decimal"
-          autoFocus
-          className="w-full rounded-xl border border-coal-600 bg-coal-800 px-4 py-3 text-2xl font-black tabular-nums outline-none focus:border-ember-500"
-          placeholder="0.00"
-        />
-      </label>
+      {/* Betragseingabe – Touch-Ziffernblock */}
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-sm font-medium text-ink-dim">Gegeben (USD)</span>
+          <button
+            onClick={exact}
+            disabled={busy}
+            className="cursor-pointer rounded-lg border border-coal-600 px-3 py-1 text-xs font-bold text-ink-dim transition hover:bg-coal-800 hover:text-ink disabled:opacity-40"
+          >
+            Exakt ({formatMoney(order.totalCents).replace("$", "")})
+          </button>
+        </div>
+        <div className="flex h-14 items-center justify-end rounded-xl border border-coal-600 bg-coal-800 px-4 text-3xl font-black tabular-nums">
+          <span className="mr-1 text-lg text-ink-dim">$</span>
+          {given || "0.00"}
+        </div>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "⌫"].map((k) => (
+            <button
+              key={k}
+              onClick={() => press(k)}
+              disabled={busy}
+              className="touch h-14 cursor-pointer rounded-xl bg-coal-800 text-xl font-black text-ink transition hover:bg-coal-700 active:scale-[0.97] disabled:opacity-40"
+            >
+              {k}
+            </button>
+          ))}
+          <button
+            onClick={() => press("C")}
+            disabled={busy}
+            className="touch h-14 cursor-pointer rounded-xl bg-red-500/15 text-sm font-bold text-red-300 transition hover:bg-red-500/25 disabled:opacity-40"
+          >
+            C
+          </button>
+        </div>
+      </div>
 
       <div>
         <span className="mb-1.5 block text-sm font-medium text-ink-dim">Trinkgeld (optional – wird NIE automatisch aus dem Rückgeld abgeleitet)</span>
@@ -441,4 +523,17 @@ function TipButton({ label, active, onClick }: { label: string; active: boolean;
       {label}
     </button>
   );
+}
+
+/** Eingabe-Logik des Ziffernblocks: max. 5 Vorkommastellen, max. 2 Nachkommastellen, ein Komma. */
+function applyKey(current: string, key: string): string {
+  if (key === "C") return "";
+  if (key === "⌫") return current.slice(0, -1);
+  const dotIndex = current.indexOf(".");
+  const intPart = dotIndex === -1 ? current : current.slice(0, dotIndex);
+  const decPart = dotIndex === -1 ? null : current.slice(dotIndex + 1);
+  if (key === ".") return dotIndex === -1 ? current + "." : current;
+  if (decPart !== null && decPart.length >= 2) return current;
+  if (intPart.length >= 5) return current;
+  return current + key;
 }

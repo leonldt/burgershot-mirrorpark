@@ -34,18 +34,27 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="p-5">
-          <div className="text-xs font-semibold uppercase tracking-widest text-ink-dim">Offene Bestellungen</div>
-          <div className="mt-1 text-3xl font-black">{stats.openCounts.PENDING + stats.openCounts.PREPARING + stats.openCounts.READY}</div>
-        </Card>
-        <Card className="p-5">
-          <div className="text-xs font-semibold uppercase tracking-widest text-ink-dim">In Zubereitung</div>
-          <div className="mt-1 text-3xl font-black">{stats.openCounts.PREPARING}</div>
-        </Card>
-        <Card className="p-5">
-          <div className="text-xs font-semibold uppercase tracking-widest text-ink-dim">Bereit zur Ausgabe</div>
-          <div className="mt-1 text-3xl font-black">{stats.openCounts.READY}</div>
-        </Card>
+        <Link href="/admin/orders">
+          <Card className="p-5 transition hover:border-coal-500">
+            <div className="text-xs font-semibold uppercase tracking-widest text-ink-dim">Offene Bestellungen</div>
+            <div className="mt-1 text-3xl font-black">{stats.openCounts.PENDING + stats.openCounts.PREPARING + stats.openCounts.READY}</div>
+            <div className="mt-1 text-xs text-ember-400">Zur Liste →</div>
+          </Card>
+        </Link>
+        <Link href="/admin/orders?status=PREPARING">
+          <Card className="p-5 transition hover:border-coal-500">
+            <div className="text-xs font-semibold uppercase tracking-widest text-ink-dim">In Zubereitung</div>
+            <div className="mt-1 text-3xl font-black">{stats.openCounts.PREPARING}</div>
+            <div className="mt-1 text-xs text-ember-400">Zur Liste →</div>
+          </Card>
+        </Link>
+        <Link href="/admin/orders?status=READY">
+          <Card className="p-5 transition hover:border-coal-500">
+            <div className="text-xs font-semibold uppercase tracking-widest text-ink-dim">Bereit zur Ausgabe</div>
+            <div className="mt-1 text-3xl font-black">{stats.openCounts.READY}</div>
+            <div className="mt-1 text-xs text-ember-400">Zur Liste →</div>
+          </Card>
+        </Link>
       </div>
 
       <Card>
