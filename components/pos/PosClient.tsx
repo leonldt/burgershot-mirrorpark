@@ -416,6 +416,8 @@ function CheckoutBody({
   }
   const changeCents = givenCents !== null ? givenCents - order.totalCents - tip : null;
   const valid = givenCents !== null && changeCents !== null && changeCents >= 0;
+  // Rest als Trinkgeld nur in ganzen Dollar (Cent-Anteil landet im Rückgeld)
+  const wholeRestCents = givenCents !== null && givenCents > order.totalCents ? Math.floor((givenCents - order.totalCents) / 100) * 100 : 0;
 
   const press = (key: string) => setGiven((cur) => applyKey(cur, key));
   const exact = () => setGiven((order.totalCents / 100).toFixed(2));
@@ -436,24 +438,33 @@ function CheckoutBody({
         </div>
       </div>
 
-      {/* Betragseingabe – Touch-Ziffernblock */}
+      {/* Betragseingabe – Touch-Ziffernblock, nur ganze Dollar */}
       <div>
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-sm font-medium text-ink-dim">Gegeben (USD)</span>
-          <button
-            onClick={exact}
-            disabled={busy}
-            className="cursor-pointer rounded-lg border border-coal-600 px-3 py-1 text-xs font-bold text-ink-dim transition hover:bg-coal-800 hover:text-ink disabled:opacity-40"
-          >
-            Exakt ({formatMoney(order.totalCents).replace("$", "")})
-          </button>
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm font-medium text-ink-dim">Gegeben (USD – ganze Dollar)</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => press("C")}
+              disabled={busy}
+              className="cursor-pointer rounded-lg border border-coal-600 px-3 py-1 text-xs font-bold text-ink-dim transition hover:bg-coal-800 hover:text-ink disabled:opacity-40"
+            >
+              C (Löschen)
+            </button>
+            <button
+              onClick={exact}
+              disabled={busy}
+              className="cursor-pointer rounded-lg border border-coal-600 px-3 py-1 text-xs font-bold text-ink-dim transition hover:bg-coal-800 hover:text-ink disabled:opacity-40"
+            >
+              Exakt ({formatMoney(order.totalCents).replace("$", "")})
+            </button>
+          </div>
         </div>
         <div className="flex h-14 items-center justify-end rounded-xl border border-coal-600 bg-coal-800 px-4 text-3xl font-black tabular-nums">
           <span className="mr-1 text-lg text-ink-dim">$</span>
-          {given || "0.00"}
+          {given || "0"}
         </div>
         <div className="mt-2 grid grid-cols-3 gap-2">
-          {["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "⌫"].map((k) => (
+          {["7", "8", "9", "4", "5", "6", "1", "2", "3", "00", "0", "⌫"].map((k) => (
             <button
               key={k}
               onClick={() => press(k)}
@@ -463,25 +474,19 @@ function CheckoutBody({
               {k}
             </button>
           ))}
-          <button
-            onClick={() => press("C")}
-            disabled={busy}
-            className="touch h-14 cursor-pointer rounded-xl bg-red-500/15 text-sm font-bold text-red-300 transition hover:bg-red-500/25 disabled:opacity-40"
-          >
-            C
-          </button>
         </div>
+        <p className="mt-1.5 text-xs text-ink-dim/70">Beträge werden in ganzen Dollar erfasst (keine Cent). Rückgeld wird automatisch berechnet.</p>
       </div>
 
       <div>
-        <span className="mb-1.5 block text-sm font-medium text-ink-dim">Trinkgeld (optional – wird NIE automatisch aus dem Rückgeld abgeleitet)</span>
+        <span className="mb-1.5 block text-sm font-medium text-ink-dim">Trinkgeld (optional – nur ganze Dollar, wird NIE automatisch aus dem Rückgeld abgeleitet)</span>
         <div className="flex flex-wrap gap-2">
           <TipButton active={tip === 0} onClick={() => setTip(0)} label="Kein Trinkgeld" />
-          <TipButton active={tip === 50} onClick={() => setTip(50)} label="+$0.50" />
-          <TipButton active={tip === 100} onClick={() => setTip(100)} label="+$1.00" />
-          <TipButton active={tip === 200} onClick={() => setTip(200)} label="+$2.00" />
-          {givenCents !== null && givenCents > order.totalCents && (
-            <TipButton active={tip === givenCents - order.totalCents} onClick={() => setTip(givenCents - order.totalCents)} label="Rest als Trinkgeld" />
+          <TipButton active={tip === 100} onClick={() => setTip(100)} label="+$1" />
+          <TipButton active={tip === 200} onClick={() => setTip(200)} label="+$2" />
+          <TipButton active={tip === 500} onClick={() => setTip(500)} label="+$5" />
+          {givenCents !== null && givenCents > order.totalCents && wholeRestCents > 0 && (
+            <TipButton active={tip === wholeRestCents} onClick={() => setTip(wholeRestCents)} label="Rest als Trinkgeld" />
           )}
         </div>
       </div>
@@ -525,15 +530,11 @@ function TipButton({ label, active, onClick }: { label: string; active: boolean;
   );
 }
 
-/** Eingabe-Logik des Ziffernblocks: max. 5 Vorkommastellen, max. 2 Nachkommastellen, ein Komma. */
+/** Eingabe-Logik des Ziffernblocks: nur ganze Dollar, max. 6 Stellen. */
 function applyKey(current: string, key: string): string {
   if (key === "C") return "";
   if (key === "⌫") return current.slice(0, -1);
-  const dotIndex = current.indexOf(".");
-  const intPart = dotIndex === -1 ? current : current.slice(0, dotIndex);
-  const decPart = dotIndex === -1 ? null : current.slice(dotIndex + 1);
-  if (key === ".") return dotIndex === -1 ? current + "." : current;
-  if (decPart !== null && decPart.length >= 2) return current;
-  if (intPart.length >= 5) return current;
+  if (!/^\d+$/.test(key)) return current; // nur Ziffern – "00" ist erlaubt, sonst nichts
+  if (current.length >= 6) return current;
   return current + key;
 }
