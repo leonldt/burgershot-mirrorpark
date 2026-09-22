@@ -1,6 +1,6 @@
 import { Card, inputCls, StatusBadge } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
-import { createProduct, updateProduct, toggleProduct, deleteProduct, reorderProducts } from "@/actions/admin/products";
+import { createProduct, updateProduct, toggleProduct, deleteProduct } from "@/actions/admin/products";
 import ActionForm from "@/components/admin/ActionForm";
 import ReorderList from "@/components/admin/ReorderList";
 import { formatMoney } from "@/lib/money";
@@ -159,15 +159,8 @@ export default async function ProductsPage() {
               <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-ember-400">{cat.name}</h3>
               {cat.products.length > 1 ? (
                 <ReorderList
+                  kind="products"
                   items={cat.products.map((p) => ({ id: p.id, label: `${p.name} · ${formatMoney(p.priceCents)}` }))}
-                  onReorder={async (ids) => {
-                    const res = await reorderProducts({ productIds: ids });
-                    if (res.ok) {
-                      // Seite wird im Hintergrund neu aufgebaut
-                      window.location.reload?.();
-                    }
-                    return res;
-                  }}
                 />
               ) : (
                 <p className="text-xs text-ink-dim">Mindestens 2 Produkte nötig.</p>

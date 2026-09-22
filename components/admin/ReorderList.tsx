@@ -1,18 +1,20 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { ActionResult } from "@/actions/admin/products";
+import { reorderProducts } from "@/actions/admin/products";
+import { reorderCategories } from "@/actions/admin/categories";
 
 /**
  * Liste mit Drag & Drop (+ alternativen ↑/↓-Buttons) zum Neusortieren.
- * Ruft onReorder mit der neuen Reihenfolge auf und zeigt das Ergebnis an.
+ * Ruft die passende Server Action selbst auf (kein Callback-Prop von Server
+ * Components – das wäre nicht serialisierbar) und zeigt das Ergebnis an.
  */
 export default function ReorderList({
+  kind,
   items,
-  onReorder,
 }: {
+  kind: "products" | "categories";
   items: { id: string; label: string }[];
-  onReorder: (ids: string[]) => Promise<ActionResult>;
 }) {
   const [order, setOrder] = useState(items.map((i) => i.id));
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
@@ -28,8 +30,12 @@ export default function ReorderList({
 
   const persist = async () => {
     setNote(null);
-    const res = await onReorder(order);
+    const res =
+      kind === "products"
+        ? await reorderProducts({ productIds: order })
+        : await reorderCategories({ categoryIds: order });
     setNote(res.ok ? { ok: true, text: "Sortierung gespeichert." } : { ok: false, text: res.error });
+    if (res.ok) window.location.reload();
   };
 
   return (

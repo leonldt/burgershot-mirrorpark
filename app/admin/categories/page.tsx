@@ -1,6 +1,6 @@
 import { Card, inputCls, StatusBadge } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
-import { createCategory, updateCategory, toggleCategory, deleteCategory, reorderCategories } from "@/actions/admin/categories";
+import { createCategory, updateCategory, toggleCategory, deleteCategory } from "@/actions/admin/categories";
 import ActionForm from "@/components/admin/ActionForm";
 import ReorderList from "@/components/admin/ReorderList";
 
@@ -76,12 +76,8 @@ export default async function CategoriesPage() {
       <Card className="p-5">
         <h2 className="mb-3 text-sm font-extrabold uppercase tracking-widest">Sortierung (Drag & Drop oder ↑/↓)</h2>
         <ReorderList
+          kind="categories"
           items={categories.map((c) => ({ id: c.id, label: c.name }))}
-          onReorder={async (ids) => {
-            const res = await reorderCategories({ categoryIds: ids });
-            if (res.ok) window.location.reload?.();
-            return res;
-          }}
         />
       </Card>
     </div>
