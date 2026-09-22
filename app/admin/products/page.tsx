@@ -4,6 +4,7 @@ import { createProduct, updateProduct, toggleProduct, deleteProduct } from "@/ac
 import ActionForm from "@/components/admin/ActionForm";
 import ReorderList from "@/components/admin/ReorderList";
 import { formatMoney } from "@/lib/money";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,10 @@ export default async function ProductsPage() {
             <span className="mb-1.5 block text-xs font-medium text-ink-dim">Beschreibung</span>
             <textarea name="description" rows={3} className={inputCls} placeholder="Optional" />
           </label>
+          <label className="block sm:col-span-2">
+            <span className="mb-1.5 block text-xs font-medium text-ink-dim">Bild-URL (optional)</span>
+            <input name="imageUrl" placeholder="https://…" className={inputCls} />
+          </label>
           <label className="flex items-end gap-2 pb-2">
             <input type="checkbox" name="active" defaultChecked className="h-5 w-5 accent-ember-500" />
             <span className="text-sm font-medium text-ink-dim">Aktiv</span>
@@ -83,8 +88,17 @@ export default async function ProductsPage() {
                   {cat.products.map((p) => (
                     <tr key={p.id} className="border-b border-coal-700/60 align-top last:border-0">
                       <td className="px-5 py-3">
-                        <div className="font-bold">{p.name}</div>
-                        <div className="max-w-60 text-xs text-ink-dim">{p.description || "–"}</div>
+                        <div className="flex items-center gap-3">
+                          {p.imageUrl ? (
+                            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-coal-700">
+                              <Image src={p.imageUrl} alt={p.name} fill sizes="48px" className="object-cover" />
+                            </div>
+                          ) : null}
+                          <div>
+                            <div className="font-bold">{p.name}</div>
+                            <div className="max-w-52 text-xs text-ink-dim">{p.description || "–"}</div>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-3 font-bold tabular-nums">{formatMoney(p.priceCents)}</td>
                       <td className="px-5 py-3">
@@ -122,6 +136,10 @@ export default async function ProductsPage() {
                               <label className="block sm:col-span-2">
                                 <span className="mb-1 block text-[11px] font-medium text-ink-dim">Beschreibung</span>
                                 <textarea name="description" rows={2} defaultValue={p.description ?? ""} className={inputCls} />
+                              </label>
+                              <label className="block sm:col-span-2">
+                                <span className="mb-1 block text-[11px] font-medium text-ink-dim">Bild-URL</span>
+                                <input name="imageUrl" defaultValue={p.imageUrl ?? ""} placeholder="https://…" className={inputCls} />
                               </label>
                               <label className="block">
                                 <span className="mb-1 block text-[11px] font-medium text-ink-dim">Kategorie</span>

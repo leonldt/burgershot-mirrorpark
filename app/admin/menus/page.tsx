@@ -4,6 +4,7 @@ import { createMenu, updateMenu, deleteMenu, toggleMenu } from "@/actions/admin/
 import ActionForm from "@/components/admin/ActionForm";
 import MenuForm from "@/components/admin/MenuForm";
 import { formatMoney } from "@/lib/money";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -30,13 +31,20 @@ export default async function MenusPage() {
         {menus.map((m) => (
           <Card key={m.id} className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-extrabold">{m.name}</h3>
-                  <StatusBadge status={m.active ? "READY" : "COMPLETED"} />
+              <div className="flex items-start gap-3">
+                {m.imageUrl ? (
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-coal-700">
+                    <Image src={m.imageUrl} alt={m.name} fill sizes="64px" className="object-cover" />
+                  </div>
+                ) : null}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-extrabold">{m.name}</h3>
+                    <StatusBadge status={m.active ? "READY" : "COMPLETED"} />
+                  </div>
+                  {m.description && <p className="mt-0.5 text-sm text-ink-dim">{m.description}</p>}
+                  <p className="mt-1 text-sm font-black text-ember-400">{formatMoney(m.priceCents)}</p>
                 </div>
-                {m.description && <p className="mt-0.5 text-sm text-ink-dim">{m.description}</p>}
-                <p className="mt-1 text-sm font-black text-ember-400">{formatMoney(m.priceCents)}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <ActionForm action={toggleMenu} fields={{ id: m.id }} buttonLabel={m.active ? "Deaktivieren" : "Aktivieren"} tone="dark" />
@@ -66,6 +74,7 @@ export default async function MenusPage() {
                     id: m.id,
                     name: m.name,
                     description: m.description,
+                    imageUrl: m.imageUrl,
                     priceCents: m.priceCents,
                     categoryId: m.categoryId,
                     active: m.active,

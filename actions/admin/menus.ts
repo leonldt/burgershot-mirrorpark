@@ -19,6 +19,7 @@ function parseMenuForm(fd: FormData) {
   return {
     name: fd.get("name"),
     description: fd.get("description") ?? "",
+    imageUrl: fd.get("imageUrl") ?? "",
     priceCents: Math.round(parseFloat(String(fd.get("priceCents"))) * 100),
     categoryId: fd.get("categoryId"),
     active: fd.get("active") === "on",
@@ -35,7 +36,7 @@ export async function createMenu(formData: FormData): Promise<ActionResult> {
     const max = await prisma.menu.aggregate({ _max: { sortOrder: true } });
     const menu = await prisma.menu.create({
       data: {
-        name, description: description || null, priceCents, categoryId, active,
+        name, description: description || null, imageUrl: parsed.data.imageUrl || null, priceCents, categoryId, active,
         sortOrder: (max._max.sortOrder ?? -1) + 1,
         items: { create: items.map((i) => ({ productId: i.productId, quantity: i.quantity })) },
       },
@@ -60,7 +61,7 @@ export async function updateMenu(formData: FormData): Promise<ActionResult> {
       await tx.menuItem.deleteMany({ where: { menuId: id } });
       await tx.menu.update({
         where: { id },
-        data: { name, description: description || null, priceCents, categoryId, active, items: { create: items.map((i) => ({ productId: i.productId, quantity: i.quantity })) } },
+        data: { name, description: description || null, imageUrl: parsed.data.imageUrl || null, priceCents, categoryId, active, items: { create: items.map((i) => ({ productId: i.productId, quantity: i.quantity })) } },
       });
     });
     if (existing.priceCents !== priceCents) {

@@ -11,6 +11,7 @@ export type MenuFormDefaults = {
   id?: string;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   priceCents: number;
   categoryId: string;
   active: boolean;
@@ -31,6 +32,7 @@ export default function MenuForm({
   const isEdit = Boolean(defaults?.id);
   const [name, setName] = useState(defaults?.name ?? "");
   const [description, setDescription] = useState(defaults?.description ?? "");
+  const [imageUrl, setImageUrl] = useState(defaults?.imageUrl ?? "");
   const [price, setPrice] = useState(defaults ? (defaults.priceCents / 100).toFixed(2) : "");
   const [categoryId, setCategoryId] = useState(defaults?.categoryId ?? categories[0]?.id ?? "");
   const [active, setActive] = useState(defaults?.active ?? true);
@@ -47,6 +49,7 @@ export default function MenuForm({
     const fd = new FormData();
     fd.set("name", name);
     fd.set("description", description);
+    fd.set("imageUrl", imageUrl);
     fd.set("priceCents", price);
     fd.set("categoryId", categoryId);
     fd.set("active", active ? "on" : "");
@@ -95,6 +98,10 @@ export default function MenuForm({
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-ink-dim">Beschreibung</span>
           <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" className={inputCls} />
+        </label>
+        <label className="block sm:col-span-2">
+          <span className="mb-1 block text-xs font-medium text-ink-dim">Bild-URL</span>
+          <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://… (optional)" className={inputCls} />
         </label>
       </div>
 

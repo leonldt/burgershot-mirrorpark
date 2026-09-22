@@ -14,6 +14,7 @@ function parseProductForm(fd: FormData) {
   return {
     name: fd.get("name"),
     description: fd.get("description") ?? "",
+    imageUrl: fd.get("imageUrl") ?? "",
     priceCents: Math.round(parseFloat(String(fd.get("priceCents"))) * 100),
     categoryId: fd.get("categoryId"),
     active: fd.get("active") === "on",
@@ -28,7 +29,7 @@ export async function createProduct(formData: FormData): Promise<ActionResult> {
   try {
     const max = await prisma.product.aggregate({ _max: { sortOrder: true } });
     const prod = await prisma.product.create({
-      data: { name, description: description || null, priceCents, categoryId, active, sortOrder: (max._max.sortOrder ?? -1) + 1 },
+      data: { name, description: description || null, imageUrl: parsed.data.imageUrl || null, priceCents, categoryId, active, sortOrder: (max._max.sortOrder ?? -1) + 1 },
     });
     await logAudit(user.id, "PRODUCT_CREATED", "Product", prod.id, `${name} · ${formatMoney(priceCents)}`);
     return ok();
@@ -46,7 +47,7 @@ export async function updateProduct(formData: FormData): Promise<ActionResult> {
   try {
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) return { ok: false, error: "Produkt nicht gefunden." };
-    await prisma.product.update({ where: { id }, data: { name, description: description || null, priceCents, categoryId, active } });
+    await prisma.product.update({ where: { id }, data: { name, description: description || null, imageUrl: parsed.data.imageUrl || null, priceCents, categoryId, active } });
     if (existing.priceCents !== priceCents) {
       await logAudit(user.id, "PRODUCT_PRICE_CHANGED", "Product", id, `${name} · ${formatMoney(existing.priceCents)} → ${formatMoney(priceCents)}`);
     }

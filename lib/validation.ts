@@ -8,6 +8,7 @@ export const loginSchema = z.object({
 export const productSchema = z.object({
   name: z.string().trim().min(1, "Name ist erforderlich").max(80),
   description: z.string().trim().max(500).optional().or(z.literal("")),
+  imageUrl: z.string().trim().max(1000).optional().or(z.literal("")),
   priceCents: z.coerce.number().int().min(0, "Preis darf nicht negativ sein").max(100_000_000),
   categoryId: z.string().min(1),
   sortOrder: z.coerce.number().int().min(0).default(0),
@@ -23,6 +24,7 @@ export const categorySchema = z.object({
 export const menuSchema = z.object({
   name: z.string().trim().min(1, "Name ist erforderlich").max(80),
   description: z.string().trim().max(500).optional().or(z.literal("")),
+  imageUrl: z.string().trim().max(1000).optional().or(z.literal("")),
   priceCents: z.coerce.number().int().min(0, "Preis darf nicht negativ sein").max(100_000_000),
   categoryId: z.string().min(1),
   sortOrder: z.coerce.number().int().min(0).default(0),

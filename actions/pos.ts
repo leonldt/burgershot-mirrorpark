@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { requireRole, Roles } from "@/lib/roles";
 import { FORMATTED_ORDER_NUMBER } from "@/lib/constants";
 
-export type PosProduct = { id: string; name: string; priceCents: number; description: string | null };
-export type PosMenu = { id: string; name: string; priceCents: number; description: string | null };
+export type PosProduct = { id: string; name: string; priceCents: number; description: string | null; imageUrl: string | null };
+export type PosMenu = { id: string; name: string; priceCents: number; description: string | null; imageUrl: string | null };
 export type PosCategory = { id: string; name: string; products: PosProduct[]; menus: PosMenu[] };
 
 export async function getPosCatalog(): Promise<PosCategory[]> {
@@ -19,12 +19,12 @@ export async function getPosCatalog(): Promise<PosCategory[]> {
       products: {
         where: { active: true },
         orderBy: { sortOrder: "asc" },
-        select: { id: true, name: true, priceCents: true, description: true },
+        select: { id: true, name: true, priceCents: true, description: true, imageUrl: true },
       },
       menus: {
         where: { active: true },
         orderBy: { sortOrder: "asc" },
-        select: { id: true, name: true, priceCents: true, description: true },
+        select: { id: true, name: true, priceCents: true, description: true, imageUrl: true },
       },
     },
   });

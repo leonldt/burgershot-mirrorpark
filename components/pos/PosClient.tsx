@@ -7,6 +7,7 @@ import { formatMoney, parseDollarsToCents } from "@/lib/money";
 import { Modal, Note } from "@/components/client";
 import { formatTime } from "@/lib/date";
 import Clock from "@/components/Clock";
+import Image from "next/image";
 
 type CartLine = { key: string; kind: "product" | "menu"; id: string; name: string; priceCents: number; qty: number };
 
@@ -214,10 +215,10 @@ export default function PosClient({ catalog, readyOrders: initialReady }: { cata
           {activeCat && (activeCat.menus.length > 0 || activeCat.products.length > 0) ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
               {activeCat.menus.map((m) => (
-                <ItemButton key={`m${m.id}`} name={m.name} priceCents={m.priceCents} sub="Menü" accent onClick={() => addItem("menu", m.id, m.name, m.priceCents)} />
+                <ItemButton key={`m${m.id}`} name={m.name} priceCents={m.priceCents} sub="Menü" accent imageUrl={m.imageUrl} onClick={() => addItem("menu", m.id, m.name, m.priceCents)} />
               ))}
               {activeCat.products.map((p) => (
-                <ItemButton key={`p${p.id}`} name={p.name} priceCents={p.priceCents} onClick={() => addItem("product", p.id, p.name, p.priceCents)} />
+                <ItemButton key={`p${p.id}`} name={p.name} priceCents={p.priceCents} imageUrl={p.imageUrl} onClick={() => addItem("product", p.id, p.name, p.priceCents)} />
               ))}
             </div>
           ) : (
@@ -363,28 +364,37 @@ function ItemButton({
   priceCents,
   sub,
   accent = false,
+  imageUrl,
   onClick,
 }: {
   name: string;
   priceCents: number;
   sub?: string;
   accent?: boolean;
+  imageUrl?: string | null;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`touch flex min-h-28 cursor-pointer flex-col justify-between rounded-2xl border p-3.5 text-left transition active:scale-[0.98] ${
+      className={`touch flex min-h-28 cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border text-left transition active:scale-[0.98] ${
         accent
           ? "border-ember-500/40 bg-ember-500/10 hover:border-ember-400 hover:bg-ember-500/15"
           : "border-coal-600 bg-coal-800 hover:border-coal-500 hover:bg-coal-700"
       }`}
     >
-      <div>
-        <div className="text-[15px] font-bold leading-snug">{name}</div>
+      {imageUrl ? (
+        <div className="relative h-32 w-full shrink-0 bg-coal-700">
+          <Image src={imageUrl} alt={name} fill sizes="(max-width: 1280px) 33vw, 25vw" className="object-cover" />
+        </div>
+      ) : null}
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3.5">
+        <div>
+          <div className="text-[15px] font-bold leading-snug">{name}</div>
         {sub && <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-ember-400">{sub}</div>}
+        </div>
+        <div className={`text-base font-black tabular-nums ${accent ? "text-ember-300" : "text-ink"}`}>{formatMoney(priceCents)}</div>
       </div>
-      <div className={`mt-2 text-base font-black tabular-nums ${accent ? "text-ember-300" : "text-ink"}`}>{formatMoney(priceCents)}</div>
     </button>
   );
 }
