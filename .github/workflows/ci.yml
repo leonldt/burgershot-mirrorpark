@@ -19,6 +19,8 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/burgershot_ci
 
   e2e:
     runs-on: ubuntu-latest

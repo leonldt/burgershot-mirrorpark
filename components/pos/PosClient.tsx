@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { submitOrder, completeOrderWithPayment } from "@/actions/orders";
 import { getReadyOrders, type PosCategory, type ReadyOrderDto } from "@/actions/pos";
 import { formatMoney, parseDollarsToCents } from "@/lib/money";
@@ -401,7 +401,7 @@ function CheckoutBody({
 }: {
   order: ReadyOrderDto;
   given: string;
-  setGiven: (v: string) => void;
+  setGiven: Dispatch<SetStateAction<string>>;
   tip: number;
   setTip: (v: number) => void;
   payError: string | null;
@@ -417,7 +417,7 @@ function CheckoutBody({
   const changeCents = givenCents !== null ? givenCents - order.totalCents - tip : null;
   const valid = givenCents !== null && changeCents !== null && changeCents >= 0;
 
-  const press = (key: string) => setGiven(applyKey(given, key));
+  const press = (key: string) => setGiven((cur) => applyKey(cur, key));
   const exact = () => setGiven((order.totalCents / 100).toFixed(2));
 
   return (
