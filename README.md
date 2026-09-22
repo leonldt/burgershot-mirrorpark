@@ -84,7 +84,7 @@ Danach Schema anlegen und Seed ausführen:
 
 ```bash
 npm run db:migrate      # prisma migrate dev
-npm run db:seed         # Demo-Daten
+npm run db:seed         # erzeugt nur den initialen Admin-Zugang
 ```
 
 > Hinweis: `postinstall` erzeugt den Prisma-Client automatisch; manuell via
@@ -107,24 +107,22 @@ npm run start
 
 ---
 
-## Demo-Zugangsdaten
+## Initialer Zugang
 
-> ⚠️ Nur für Entwicklung/Demo – im Produktivbetrieb unbedingt ändern!
+> Das System startet bei 0 – es gibt keine Demo-Daten. Der Seed legt nur den
+> Admin-Zugang an; Produkte, Kategorien, Menüs und Mitarbeiter erstellst du im
+> Admin-Panel.
 
 | Rolle | Benutzername | Passwort |
 | --- | --- | --- |
-| Admin | `admin` | `admin123` |
-| Mitarbeiter | `max` | `demo123` |
-| Mitarbeiter | `john` | `demo123` |
-| Mitarbeiter | `sarah` | `demo123` |
-| Mitarbeiter (Kasse + Küche) | `koch` | `kueche123` |
+| Admin | `admin` | `admin123` (Initial-Passwort – nach dem ersten Login ändern) |
 
 ---
 
 ## Ablauf (End-to-End)
 
 ```
-Login (admin/max/koch)
+Login (admin)
  → Kasse: Produkt antippen → BESTELLUNG ABSCHICKEN
  → Küche: ÜBERNEHMEN → ZUBEREITET
  → Kasse: „Bereit zur Ausgabe" → Betrag erfassen (Gegeben + optional Trinkgeld)
@@ -153,6 +151,12 @@ lib/              # prisma, session, money, validation, stats, realtime …
 prisma/           # Schema, Migrationen, Seed
 e2e/              # Playwright-Tests
 scripts/          # db.mjs (embedded PostgreSQL), prepare-test-db.mjs
+```
+
+## Betrieb auf 0 setzen
+
+```bash
+npm run db:clean   # löscht alle Geschäftsdaten + nicht-Admin-Benutzer (Admin bleibt)
 ```
 
 ## Deployment

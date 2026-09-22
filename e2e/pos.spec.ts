@@ -3,17 +3,34 @@ import pg from "pg";
 
 /**
  * Kompletter Ablauf: Login → Kasse/Bestellung → Küche → Ausgabe an der Kasse →
- * Trinkgeld wird dem Mitarbeiter gutgeschrieben.
+ * Trinkgeld wird gutgeschrieben. Der Test baut seine eigenen Daten auf
+ * (keine Abhängigkeit von Demo-/Seed-Daten).
  */
 const TEST_URL = process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54329/burgershot_test";
 
-// Sauberer Zustand pro Testlauf: alle OFFENEN Bestellungen entfernen, damit
-// Retries/parallele Runs nicht durch Bestandskarten (READY/PREPARING) verfälscht werden.
+// Sauberer Zustand pro Lauf: Betriebsdaten leeren und einen minimalen
+// Katalog + Mitarbeiter anlegen. Der Admin existiert aus dem Seed.
 test.beforeEach(async () => {
   const client = new pg.Client({ connectionString: TEST_URL });
   await client.connect();
-  await client.query(`DELETE FROM "OrderItem" WHERE "orderId" IN (SELECT id FROM "Order" WHERE status <> 'COMPLETED')`);
-  await client.query(`DELETE FROM "Order" WHERE status <> 'COMPLETED'`);
+  await client.query(
+    `TRUNCATE TABLE "OrderItem", "Order", "TipTransaction", "TipPayout", "AuditLog",
+       "MenuItem", "Menu", "Product", "Category", "Session" CASCADE`
+  );
+  await client.query(`DELETE FROM "User" WHERE username <> 'admin'`);
+  await client.query(
+    `INSERT INTO "Category" (id, name, "sortOrder", active, "createdAt", "updatedAt")
+     VALUES ('e2e-cat-burger', 'Burger', 0, true, now(), now())`
+  );
+  await client.query(
+    `INSERT INTO "Product" (id, name, description, "priceCents", "sortOrder", active, "categoryId", "createdAt", "updatedAt")
+     VALUES ('e2e-prod-burger', 'Classic Burger', NULL, 490, 0, true, 'e2e-cat-burger', now(), now())`
+  );
+  await client.query(
+    `INSERT INTO "User" (id, username, "passwordHash", "firstName", "lastName", role, active, "createdAt", "updatedAt")
+     VALUES ('e2e-user-max', 'max', 'x', 'Max', 'Mustermann', 'EMPLOYEE', true, now(), now())
+     ON CONFLICT (username) DO NOTHING`
+  );
   await client.end();
 });
 
@@ -58,16 +75,15 @@ test("POS → Küche → Kasse → Trinkgeld", async ({ page }) => {
   await readyCard.click({ timeout: 15_000 });
 
   const dialog = page.getByRole("dialog");
-  // Betrag 20 über den Touch-Ziffernblock eingeben
+  // Betrag 20 über den Touch-Ziffernblock eingeben; „Rest als Trinkgeld" ist automatisch aktiv
   await dialog.getByRole("button", { name: "2", exact: true }).click();
   await dialog.getByRole("button", { name: "0", exact: true }).click();
-  await dialog.locator("button:has-text('Rest als Trinkgeld')").click();
   await dialog.locator("button:has-text('BEZAHLT · BESTELLUNG RAUS GEBEN')").click();
 
   // Ausgabe-Bereich ist wieder leer (Bestellung abgeschlossen)
   await expect(page.locator("button:has-text('RAUS GEBEN')").first()).not.toBeVisible({ timeout: 15_000 });
 
-  // ── Admin: Trinkgeld-Balance des Mitarbeiters sichtbar ──────────────────────
+  // ── Admin: Trinkgeld-Balance des Admins sichtbar (er hat die Bestellung kassiert) ──
   await page.goto("/admin/tips");
-  await expect(page.getByText("Max Mustermann").first()).toBeVisible();
+  await expect(page.getByText("Admin Burgershot").first()).toBeVisible();
 });

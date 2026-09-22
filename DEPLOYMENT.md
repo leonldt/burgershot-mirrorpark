@@ -61,7 +61,8 @@ Variable gesetzt werden muss.
 
 ## Produktions-Hinweise
 
-- **Demo-Zugangsdaten zwingend ändern** (`admin/admin123` u. a., siehe README).
+- **Initial-Passwort ändern**: Es gibt keine Demo-Daten; der Zugang `admin/admin123`
+  ist ein Initial-Passwort und sollte nach dem ersten Login geändert werden.
 - Sessions sind DB-gestützt (`Session`-Tabelle) und funktionieren multi-instance.
 - Echtzeit (SSE) nutzt einen In-Process-Event-Bus – für horizontale Skalierung
   auf mehreren Nodes greift der 20-s-Polling-Fallback; ein externer Pub/Sub
